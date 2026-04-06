@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strive-Ops Coaching</title>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<style>
+body {
+    background: #020617;
+    color: white;
+    font-family: Arial;
+    text-align: center;
+    padding: 20px;
+}
+
+video {
+    width: 45%;
+    background: black;
+    border-radius: 10px;
+    margin: 10px;
+}
+
+#local-video {
+    transform: scaleX(-1);
+}
+</style>
+</head>
+
+<body>
+
+<h2>Strive-Ops Coaching</h2>
+
+<p>Your ID:</p>
+<b id="my-id">Connecting...</b>
+
+<br><br>
+
+<input id="remote-id" placeholder="Enter ID">
+<button onclick="startCall()">Connect</button>
+
+<br><br>
+
+<div>
+    <video id="local-video" autoplay muted playsinline></video>
+    <video id="remote-video" autoplay playsinline></video>
+</div>
+
+<!-- 🔥 CACHE BUSTER (IMPORTANT) -->
+<script src="app.js?v=1"></script>
+
+</body>
+</html>
