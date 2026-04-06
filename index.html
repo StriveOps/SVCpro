@@ -3,148 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strive-Ops | Final Build</title>
-    
+    <title>Strive-Ops | Operations Command</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
     <style>
-        body { background: #020617; color: white; font-family: sans-serif; margin: 0; overflow: hidden; }
-        header { background: #0f172a; padding: 1rem; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+        body { background: #020617; color: white; font-family: sans-serif; overflow: hidden; height: 100vh; }
+        .ops-glass { background: rgba(15, 23, 42, 0.9); border-right: 1px solid #1e293b; }
         
-        /* THE GRID: Forces 50/50 when "active" class is added */
+        /* THE DYNAMIC GRID: Forced Side-by-Side */
         #video-grid { 
             display: grid; 
+            gap: 1rem; 
+            padding: 1rem; 
+            width: 100%; 
+            height: 100%; 
             grid-template-columns: 1fr; 
-            gap: 15px; 
-            padding: 15px; 
-            height: 80vh; 
         }
+        /* Snap to 50/50 when "active" class is present */
         #video-grid.active { 
             grid-template-columns: 1fr 1fr !important; 
         }
-
-        .video-slot { background: #000; border-radius: 15px; overflow: hidden; border: 2px solid #1e293b; position: relative; }
+        
+        .video-container { background: #000; border-radius: 1rem; overflow: hidden; border: 1px solid #334155; position: relative; width: 100%; height: 100%; }
         video { width: 100%; height: 100%; object-fit: cover; }
         #local-video { transform: scaleX(-1); }
-
-        #lobby-gate { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; }
-        .btn-blue { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
-<body>
+<body class="flex flex-col h-screen">
 
-    <div id="lobby-gate">
-        <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #2563eb;">
-            <h2 style="margin-bottom: 20px;">EXPERT WAITING IN LOBBY</h2>
-            <button class="btn-blue" onclick="admitExpert()">ADMIT TO OPS</button>
-        </div>
-    </div>
-
-    <header>
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <h1 style="margin: 0; font-style: italic;">STRIVE-OPS</h1>
-            <span id="my-id" style="font-family: monospace; color: #60a5fa; font-size: 12px;">BOOTING...</span>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="target-id" placeholder="PASTE ID HERE" style="background: #000; border: 1px solid #334155; color: white; padding: 5px 10px; border-radius: 5px;">
-            <button class="btn-blue" onclick="connectToExpert()">CONNECT</button>
+    <header class="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center">
+        <h1 class="font-black italic text-xl">STRIVE-OPS</h1>
+        <div class="flex gap-4 items-center">
+            <p id="my-id" class="text-[10px] font-mono text-blue-400">CONNECTING...</p>
+            <input type="text" id="remote-id" placeholder="PASTE ID" class="bg-black border border-gray-700 px-3 py-1 text-xs rounded outline-none w-32">
+            <button onclick="startCall()" class="bg-blue-600 px-4 py-1 rounded text-[10px] font-bold">CONNECT</button>
         </div>
     </header>
 
-    <div id="video-grid">
-        <div class="video-slot" id="host-slot">
-            <video id="local-video" autoplay muted playsinline></video>
-            <div style="position: absolute; bottom: 10px; left: 10px; background: #2563eb; padding: 2px 8px; font-size: 10px; border-radius: 4px;">LUIS (HOST)</div>
-        </div>
-    </div>
+    <main class="flex flex-grow overflow-hidden">
+        <aside class="w-64 ops-glass p-5 flex flex-col space-y-6">
+            <div>
+                <h3 class="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-3">Online Team</h3>
+                <div id="member-list" class="space-y-2 text-[10px]"></div>
+            </div>
+            <div class="flex-grow flex flex-col overflow-hidden">
+                <h3 class="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-3">Live Chat</h3>
+                <div id="chat-box" class="flex-grow overflow-y-auto space-y-2 text-[10px] mb-4"></div>
+                <input type="text" id="chat-input" placeholder="Message..." class="bg-black border border-gray-800 rounded p-2 text-[10px] outline-none focus:border-blue-500">
+            </div>
+        </aside>
+
+        <section class="flex-grow relative bg-black">
+            <div id="video-grid">
+                <div class="video-container" id="container-local">
+                    <video id="local-video" autoplay muted playsinline></video>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <script src="config.js"></script>
-    <script>
-        // 1. Initial Setup
-        if (!firebase.apps.length) firebase.initializeApp(STRIVE_CONFIG.firebase);
-        
-        let peer, localStream, pendingCall;
-        const grid = document.getElementById('video-grid');
-
-        // 2. Start Camera
-        window.onload = async () => {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('local-video').srcObject = localStream;
-                startNetworking();
-            } catch (e) {
-                alert("Camera Blocked! Please allow permissions.");
-            }
-        };
-
-        // 3. Network Logic (PeerJS)
-        function startNetworking() {
-            const myId = "so-" + Math.random().toString(36).substr(2, 5);
-            
-            // Added ICE Servers for cross-network reliability
-            peer = new Peer(myId, { 
-                host: '0.peerjs.com', 
-                port: 443, 
-                secure: true,
-                config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] }
-            });
-            
-            peer.on('open', (id) => {
-                document.getElementById('my-id').innerText = "NODE: " + id;
-            });
-
-            // Handle Incoming Calls (Lobby)
-            peer.on('call', (call) => {
-                pendingCall = call;
-                document.getElementById('lobby-gate').style.display = 'flex';
-            });
-        }
-
-        // 4. Admit Button
-        function admitExpert() {
-            if (!pendingCall) return;
-            pendingCall.answer(localStream);
-            pendingCall.on('stream', (remoteStream) => {
-                showRemoteVideo(remoteStream, pendingCall.peer);
-                document.getElementById('lobby-gate').style.display = 'none';
-            });
-        }
-
-        // 5. Connect Button
-        function connectToExpert() {
-            const targetId = document.getElementById('target-id').value;
-            if (!targetId) return;
-            
-            const call = peer.call(targetId, localStream);
-            call.on('stream', (remoteStream) => {
-                showRemoteVideo(remoteStream, targetId);
-            });
-        }
-
-        // 6. Force Video to Screen
-        function showRemoteVideo(stream, id) {
-            if (document.getElementById("remote-" + id)) return;
-
-            const slot = document.createElement('div');
-            slot.id = "remote-" + id;
-            slot.className = "video-slot";
-            
-            const v = document.createElement('video');
-            v.srcObject = stream;
-            v.autoplay = true;
-            v.playsInline = true;
-            
-            slot.appendChild(v);
-            grid.appendChild(slot);
-            
-            // Force the side-by-side grid
-            grid.classList.add('active');
-            
-            // Browser safety: Force play if it gets stuck
-            v.play();
-        }
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
