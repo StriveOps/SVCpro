@@ -1,95 +1,87 @@
-/* ============================================================
-   STRIVE-OPS | FIXED 1-ON-1 VIDEO ENGINE
-   ============================================================ */
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(STRIVE_CONFIG.firebase);
-}
-
 let peer;
 let localStream;
 let currentCall = null;
 
+// START
 window.onload = async () => {
-    await getMedia();
-    initPeer();
-
-    // Auto-join support (?join=ID)
-    const params = new URLSearchParams(window.location.search);
-    const joinId = params.get("join");
-    if (joinId) {
-        document.getElementById("remote-id").value = joinId;
-    }
+    await setupMedia();
+    setupPeer();
 };
 
-async function getMedia() {
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        });
+// GET CAMERA + MIC
+async function setupMedia() {
+    localStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+    });
 
-        const localVideo = document.getElementById("local-video");
-        localVideo.srcObject = localStream;
-        await localVideo.play();
-
-    } catch (err) {
-        console.error(err);
-        alert("Camera access required");
-    }
+    const localVideo = document.getElementById("local-video");
+    localVideo.srcObject = localStream;
+    await localVideo.play();
 }
 
-function initPeer() {
-    const id = "so-" + Math.random().toString(36).slice(2, 7);
+// INIT PEER
+function setupPeer() {
+    const id = "user-" + Math.random().toString(36).substring(2, 7);
 
-    peer = new Peer(id, {
-        host: "0.peerjs.com",
-        port: 443,
-        secure: true
-    });
+    peer = new Peer(id);
 
     peer.on("open", (id) => {
         document.getElementById("my-id").innerText = id;
+        console.log("My ID:", id);
     });
 
-    // INCOMING CALL
+    // 🔥 IMPORTANT — AUTO ANSWER CALL
     peer.on("call", (call) => {
+        console.log("Incoming call");
+
         if (currentCall) currentCall.close();
 
         currentCall = call;
 
+        // AUTO ANSWER
         call.answer(localStream);
 
         call.on("stream", (remoteStream) => {
+            console.log("Receiving remote stream");
             setRemoteStream(remoteStream);
         });
 
-        call.on("close", clearRemote);
+        call.on("close", () => {
+            clearRemote();
+        });
     });
 }
 
-// OUTGOING CALL
+// CALL OTHER USER
 function startCall() {
-    const id = document.getElementById("remote-id").value.trim();
-    if (!id) return;
+    const remoteId = document.getElementById("remote-id").value.trim();
+    if (!remoteId) return;
 
     if (currentCall) currentCall.close();
 
-    const call = peer.call(id, localStream);
+    const call = peer.call(remoteId, localStream);
     currentCall = call;
 
     call.on("stream", (remoteStream) => {
+        console.log("Connected to remote");
         setRemoteStream(remoteStream);
     });
 
-    call.on("close", clearRemote);
+    call.on("close", () => {
+        clearRemote();
+    });
 }
 
 // SET REMOTE VIDEO
 function setRemoteStream(stream) {
     const remoteVideo = document.getElementById("remote-video");
+
     remoteVideo.srcObject = stream;
-    remoteVideo.play().catch(() => {});
+
+    remoteVideo.onloadedmetadata = () => {
+        remoteVideo.play();
+    };
 }
 
 // CLEAR REMOTE
