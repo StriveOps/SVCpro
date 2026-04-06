@@ -5,83 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strive-Ops | Operations Command Center</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
     <style>
         :root { --ops-blue: #3b82f6; --ops-bg: #020617; }
         body { background-color: var(--ops-bg); color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
         .ops-glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
         
-        /* Video Grid Layout */
-        #video-grid { display: grid; gap: 1rem; padding: 1rem; transition: all 0.3s ease; height: 100%; width: 100%; }
+        /* THE GRID */
+        #video-grid { display: grid; gap: 1rem; padding: 1rem; height: 100%; width: 100%; transition: all 0.4s ease; }
         .video-container { position: relative; border-radius: 1rem; overflow: hidden; background: #000; border: 1px solid #1e293b; }
-        .video-container.host { border: 2px solid var(--ops-blue); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+        .video-container.host { border: 2px solid var(--ops-blue); box-shadow: 0 0 25px rgba(59, 130, 246, 0.2); }
         
-        video { width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast; }
+        video { width: 100%; height: 100%; object-fit: cover; }
         #local-video { transform: scaleX(-1); }
 
-        /* Navigation Dock */
-        .control-dock { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 1rem; align-items: center; padding: 0.75rem 1.5rem; border-radius: 1.5rem; }
-
-        /* Side-by-Side Chat Sidebar */
-        #ai-sidebar { width: 320px; border-left: 1px solid rgba(255,255,255,0.1); transition: transform 0.3s ease; }
-        #ai-sidebar.hidden { transform: translateX(100%); width: 0; }
-        
-        .rec-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        /* OVERLAYS */
+        #boot-screen { position: fixed; inset: 0; z-index: 1000; background: #020617; display: flex; align-items: center; justify-content: center; }
+        .control-dock { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 1rem; padding: 0.75rem 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.1); }
+        #ai-sidebar { width: 320px; transition: all 0.3s ease; }
+        #ai-sidebar.hidden { width: 0; transform: translateX(100%); overflow: hidden; }
     </style>
 </head>
 <body class="flex flex-col h-screen">
 
+    <div id="boot-screen">
+        <button onclick="bootSystem()" class="bg-blue-600 px-12 py-6 rounded-2xl font-black text-xl uppercase tracking-tighter shadow-2xl hover:scale-105 transition transform">Launch Strive-Ops</button>
+    </div>
+
     <header class="flex justify-between items-center px-8 py-4 ops-glass border-b border-gray-800">
         <div class="flex items-center gap-4">
             <div class="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center font-black">SO</div>
-            <div>
-                <h1 class="text-xl font-black italic uppercase tracking-tighter">STRIVE<span class="text-blue-500">-OPS</span></h1>
-                <div class="flex items-center gap-2"><div class="rec-dot"></div><p class="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Node: <span id="my-id" class="text-blue-400">Connecting...</span></p></div>
-            </div>
+            <h1 class="text-xl font-black italic tracking-tighter uppercase">STRIVE<span class="text-blue-500">-OPS</span></h1>
         </div>
-        <div class="flex gap-4">
-            <div class="flex bg-black bg-opacity-40 border border-gray-800 rounded-lg px-2 py-1 items-center">
-                <input type="text" id="remote-id" placeholder="Expert ID" class="bg-transparent text-xs outline-none px-2 w-32">
-                <button onclick="startCall()" class="bg-blue-600 text-[9px] font-black uppercase px-4 py-1.5 rounded-md">Connect</button>
-            </div>
-            <button onclick="copyInvite()" class="text-[9px] font-black uppercase text-gray-500 hover:text-white transition">Invite Link</button>
+        <div class="flex gap-4 items-center">
+            <span id="my-id" class="text-[10px] font-mono text-blue-400 font-bold uppercase">Node ID: ...</span>
+            <input type="text" id="remote-id" placeholder="Expert ID" class="bg-black bg-opacity-40 border border-gray-800 rounded px-3 py-1 text-xs outline-none w-32">
+            <button onclick="startCall()" class="bg-blue-600 text-[10px] font-black uppercase px-4 py-2 rounded">Connect</button>
         </div>
     </header>
 
     <main class="flex flex-grow overflow-hidden">
-        
-        <aside class="w-64 ops-glass border-r border-gray-800 p-6 flex flex-col gap-6 overflow-y-auto">
+        <aside class="w-64 ops-glass border-r border-gray-800 p-6 flex flex-col gap-6">
             <div>
                 <h3 class="text-[9px] font-black text-blue-500 uppercase mb-4 tracking-widest">Hardware</h3>
-                <div class="space-y-3">
-                    <select id="video-source" class="w-full bg-gray-900 border border-gray-800 rounded p-2 text-[10px] text-gray-400" onchange="getMedia()"></select>
-                    <select id="audio-source" class="w-full bg-gray-900 border border-gray-800 rounded p-2 text-[10px] text-gray-400" onchange="getMedia()"></select>
-                </div>
+                <select id="video-source" class="w-full bg-gray-900 border border-gray-800 rounded p-2 text-[10px] text-gray-400 mb-2" onchange="getMedia()"></select>
+                <select id="audio-source" class="w-full bg-gray-900 border border-gray-800 rounded p-2 text-[10px] text-gray-400" onchange="getMedia()"></select>
             </div>
             <div>
-                <h3 class="text-[9px] font-black text-blue-500 uppercase mb-4 tracking-widest">Active Experts</h3>
+                <h3 class="text-[9px] font-black text-blue-500 uppercase mb-4 tracking-widest">Live Experts</h3>
                 <div id="member-list" class="space-y-2"></div>
-            </div>
-            <div>
-                <h3 class="text-[9px] font-black text-blue-500 uppercase mb-4 tracking-widest">Privacy Vision</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="setBgMode('none')" class="bg-gray-800 p-2 rounded text-[8px] font-bold uppercase">Off</button>
-                    <button onclick="setBgMode('blur')" class="bg-gray-800 p-2 rounded text-[8px] font-bold uppercase">Blur</button>
-                </div>
             </div>
         </aside>
 
-        <section class="flex-grow relative bg-black bg-opacity-20">
+        <section class="flex-grow bg-black bg-opacity-20 relative">
             <div id="video-grid" class="grid-cols-1 md:grid-cols-2">
                 <div class="video-container host" id="container-local">
                     <video id="local-video" autoplay muted playsinline></video>
                     <div class="absolute top-4 left-4 bg-blue-600 px-2 py-0.5 rounded text-[8px] font-black uppercase">Host: Luis</div>
                 </div>
-                </div>
+            </div>
         </section>
 
         <aside id="ai-sidebar" class="ops-glass flex flex-col hidden">
@@ -89,31 +76,22 @@
                 <h3 class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Gemini Intel</h3>
                 <button onclick="toggleChat()" class="text-gray-500">✕</button>
             </div>
-            <div id="transcript-box" class="flex-grow p-4 overflow-y-auto space-y-4 text-[10px] leading-relaxed">
-                <p class="text-center text-gray-700 opacity-40 uppercase mt-20">Awaiting Data Sync...</p>
-            </div>
-            <div class="p-4 border-t border-gray-800 bg-black bg-opacity-20">
-                <button id="trans-btn" onclick="startTranscription()" class="w-full bg-blue-600 py-3 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-lg">Start AI Analysis</button>
+            <div id="transcript-box" class="flex-grow p-4 overflow-y-auto space-y-4 text-[10px] font-medium leading-relaxed"></div>
+            <div class="p-4 bg-black bg-opacity-20">
+                <button id="trans-btn" onclick="startTranscription()" class="w-full bg-blue-600 py-3 rounded-lg font-black text-[9px] uppercase tracking-widest">Start AI Sync</button>
             </div>
         </aside>
     </main>
 
-    <nav class="control-dock ops-glass border border-gray-700 shadow-2xl">
-        <button onclick="toggleMic()" class="bg-gray-800 p-3 rounded-full hover:bg-blue-600 transition">🎤</button>
-        <button onclick="toggleCam()" class="bg-gray-800 p-3 rounded-full hover:bg-blue-600 transition">📷</button>
+    <nav class="control-dock ops-glass shadow-2xl">
+        <button onclick="toggleMic()" id="btn-mic" class="bg-gray-800 p-3 rounded-full hover:bg-blue-600 transition">🎤</button>
+        <button onclick="toggleCam()" id="btn-cam" class="bg-gray-800 p-3 rounded-full hover:bg-blue-600 transition">📷</button>
         <div class="w-px h-6 bg-gray-700 mx-2"></div>
-        <button onclick="toggleScreenShare()" id="btn-share" class="bg-purple-600 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl transition transform active:scale-95">🖥️ Share Screen</button>
+        <button onclick="toggleScreenShare()" id="btn-share" class="bg-purple-600 px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-xl transition">🖥️ Share Screen</button>
         <div class="w-px h-6 bg-gray-700 mx-2"></div>
-        <button onclick="toggleChat()" class="bg-gray-800 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-900 transition">AI Chat</button>
+        <button onclick="toggleChat()" class="bg-gray-800 px-6 py-3 rounded-xl font-black text-[10px] uppercase hover:bg-blue-900 transition">AI Chat</button>
     </nav>
 
     <script src="app.js"></script>
-    <script>
-        function copyInvite() {
-            const id = document.getElementById('my-id').innerText;
-            const link = `${window.location.origin}${window.location.pathname}?join=${id}`;
-            navigator.clipboard.writeText(link).then(() => alert("Strive-Ops Invite Copied."));
-        }
-    </script>
 </body>
 </html>
