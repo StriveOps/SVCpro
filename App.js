@@ -1,5 +1,5 @@
 /* ============================================================
-   STRIVE VIDEO CENTER (SVC) - FINAL MASTER ENGINE
+   STRIVE VIDEO CENTER (SVC) - LIVE MASTER ENGINE (v2.1)
    ============================================================ */
 
 // 1. API & FIREBASE CONFIG
@@ -16,7 +16,7 @@ const firebaseConfig = {
     appId: "1:866547736090:web:e0dfb727ad0ff134e87ba3"
 };
 
-// Initialize Firebase
+// Initialize Firebase (Compat Mode)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const sessionRef = db.ref("svc-active-members");
@@ -42,7 +42,6 @@ async function createCleanAudio(stream) {
 
     const compressor = audioContext.createDynamicsCompressor();
     compressor.threshold.setValueAtTime(-45, audioContext.currentTime);
-    compressor.knee.setValueAtTime(40, audioContext.currentTime);
 
     const destination = audioContext.createMediaStreamDestination();
     source.connect(filter);
@@ -70,8 +69,8 @@ function onAIResults(results) {
     if (bgMode === 'none') {
         canvasCtx.drawImage(results.image, 0, 0, 640, 480);
     } else {
-        // AI Masking
-        canvasCtx.filter = 'blur(2px)'; // Feather edges
+        // Smooth Masking Logic
+        canvasCtx.filter = 'blur(2px)'; 
         canvasCtx.drawImage(results.segmentationMask, 0, 0, 640, 480);
         canvasCtx.globalCompositeOperation = 'source-in';
         canvasCtx.filter = 'none';
@@ -95,36 +94,53 @@ function onAIResults(results) {
    -------------------------------------------------- */
 async function getMedia() {
     try {
-        const rawStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const cleanAudio = await createCleanAudio(rawStream);
+        const rawStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 640, height: 480 }, 
+            audio: { echoCancellation: true, noiseSuppression: true } 
+        });
         
+        const cleanAudio = await createCleanAudio(rawStream);
         await initAI();
+
         const inputVideo = document.createElement('video');
         inputVideo.srcObject = rawStream;
         inputVideo.muted = true;
         inputVideo.play();
 
         async function process() {
-            await selfieSegmentation.send({image: inputVideo});
+            if (selfieSegmentation) {
+                await selfieSegmentation.send({image: inputVideo});
+            }
             requestAnimationFrame(process);
         }
         process();
 
         const aiVideoTrack = canvasElement.captureStream(30).getVideoTracks()[0];
         localStream = new MediaStream([aiVideoTrack, cleanAudio]);
-        document.getElementById('local-video').srcObject = localStream;
-        document.getElementById('local-video').muted = true;
-    } catch (e) { console.error("Hardware Error", e); }
+        
+        const localVideoEl = document.getElementById('local-video');
+        localVideoEl.srcObject = localStream;
+        localVideoEl.muted = true;
+    } catch (e) { 
+        console.error("Hardware Error:", e);
+        alert("Please ensure camera and mic permissions are enabled.");
+    }
 }
 
-peer = new Peer();
+// 5. SECURE PEER CONNECTION
+// Forcing secure:true and port:443 for GitHub Pages compatibility
+peer = new Peer({
+    secure: true,
+    port: 443
+});
 
 peer.on('open', (id) => {
+    console.log("My Peer ID is: " + id);
     document.getElementById('my-id').innerText = id;
     
     // Sync with Firebase
     const myRef = sessionRef.child(id);
-    myRef.set({ peerId: id, timestamp: Date.now() });
+    myRef.set({ peerId: id, timestamp: firebase.database.ServerValue.TIMESTAMP });
     myRef.onDisconnect().remove();
 
     // Invite Logic
@@ -136,10 +152,8 @@ peer.on('open', (id) => {
     }
 });
 
-// Incoming Call Handler
 peer.on('call', (call) => {
     participants.set(call.peer, call);
-    // Auto-admit for this simple version
     admitPeer(call.peer);
 });
 
@@ -154,6 +168,7 @@ async function admitPeer(peerId) {
 
 async function startCall() {
     const rId = document.getElementById('remote-id').value;
+    if (!rId) return;
     if (!localStream) await getMedia();
     const call = peer.call(rId, localStream);
     call.on('stream', (rStream) => {
@@ -162,7 +177,7 @@ async function startCall() {
     });
 }
 
-/* 5. FIREBASE REAL-TIME MEMBER LIST
+/* 6. FIREBASE REAL-TIME MEMBER LIST
    -------------------------------------------------- */
 sessionRef.on("value", (snapshot) => {
     const list = document.getElementById('member-list');
@@ -173,8 +188,8 @@ sessionRef.on("value", (snapshot) => {
         list.innerHTML += `
             <div class="flex items-center justify-between p-3 mb-2 rounded-xl bg-white bg-opacity-5 border border-white border-opacity-10 text-[10px] font-bold">
                 <div class="flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full ${isMe ? 'bg-green-500' : 'bg-blue-500'}"></span> 
-                    ${isMe ? 'You' : 'Guest (' + val.peerId.substring(0,4) + ')'}
+                    <span class="w-1.5 h-1.5 rounded-full ${isMe ? 'bg-green-500 online-pulse' : 'bg-blue-500'}"></span> 
+                    ${isMe ? 'You (Host)' : 'Guest (' + val.peerId.substring(0,4) + ')'}
                 </div>
                 ${!isMe ? `<button onclick="kickPeer('${val.peerId}')" class="text-red-500 hover:text-white uppercase tracking-tighter">Kick</button>` : ''}
             </div>`;
@@ -183,10 +198,14 @@ sessionRef.on("value", (snapshot) => {
 
 function kickPeer(id) {
     sessionRef.child(id).remove();
-    alert("User removed from session.");
+    // P2P disconnect logic
+    if(participants.has(id)) {
+        participants.get(id).close();
+        participants.delete(id);
+    }
 }
 
-/* 6. UI TOGGLES & TRANSCRIPTION
+/* 7. UI HELPERS & TRANSCRIPTION
    -------------------------------------------------- */
 function setBgMode(mode) { 
     bgMode = mode; 
@@ -205,11 +224,13 @@ function loadCustomBackground(e) {
 }
 
 function toggleMic() {
+    if(!localStream) return;
     localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
     document.getElementById('toggle-mic').classList.toggle('bg-red-600');
 }
 
 function toggleCam() {
+    if(!localStream) return;
     localStream.getVideoTracks()[0].enabled = !localStream.getVideoTracks()[0].enabled;
     document.getElementById('toggle-cam').classList.toggle('bg-red-600');
 }
@@ -224,19 +245,21 @@ async function startTranscription() {
         const reader = new FileReader();
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
-            const response = await fetch(GEMINI_URL, {
-                method: "POST",
-                body: JSON.stringify({ contents: [{ parts: [{ text: "Transcribe this audio precisely:" }, { inline_data: { mime_type: "audio/webm", data: base64 } }] }] })
-            });
-            const data = await response.json();
-            const text = data.candidates[0].content.parts[0].text;
-            if(text.trim() && text !== "...") {
-                const box = document.getElementById('transcript-box');
-                if(box.innerText.includes("Waiting")) box.innerHTML = "";
-                box.innerHTML += `<div class="p-3 bg-gray-800 bg-opacity-40 rounded-lg border-l-2 border-blue-500 text-xs mb-3">
-                    <span class="text-[9px] text-gray-500 block mb-1">${new Date().toLocaleTimeString()}</span>${text}</div>`;
-                box.scrollTop = box.scrollHeight;
-            }
+            try {
+                const response = await fetch(GEMINI_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Transcribe this audio precisely:" }, { inline_data: { mime_type: "audio/webm", data: base64 } }] }] })
+                });
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                if(text.trim() && text !== "...") {
+                    const box = document.getElementById('transcript-box');
+                    if(box.innerText.includes("Awaiting")) box.innerHTML = "";
+                    box.innerHTML += `<div class="p-3 bg-gray-800 bg-opacity-40 rounded-lg border-l-2 border-blue-500 text-xs mb-3">
+                        <span class="text-[9px] text-gray-500 block mb-1 font-mono">${new Date().toLocaleTimeString()}</span>${text}</div>`;
+                    box.scrollTop = box.scrollHeight;
+                }
+            } catch(err) { console.error("Gemini Error:", err); }
         };
         reader.readAsDataURL(e.data);
     };
@@ -244,5 +267,5 @@ async function startTranscription() {
     setInterval(() => { if(mediaRecorder.state === "recording") mediaRecorder.requestData(); }, 10000);
 }
 
-// Kick off
+// Boot System
 getMedia();
