@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Strive-Ops Live</title>
+  <title>Strive-Ops | Phase 1 Transmission Test</title>
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     * {
@@ -14,198 +14,193 @@
       margin: 0;
       font-family: Arial, sans-serif;
       background: #0a0f1c;
-      color: #f1f5f9;
+      color: #f8fafc;
+      padding: 20px;
     }
 
     .app {
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 16px;
     }
 
-    .topbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      padding: 14px;
+    .header {
+      margin-bottom: 20px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .card {
       background: #111827;
       border: 1px solid #1f2937;
-      border-radius: 14px;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
     }
 
-    .brand {
-      font-size: 22px;
-      font-weight: bold;
+    .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 8px;
     }
 
-    .id-line {
-      font-size: 14px;
-      color: #93c5fd;
+    .id-box {
+      color: #60a5fa;
+      font-weight: 700;
       word-break: break-all;
+      font-size: 16px;
     }
 
     .controls {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 16px;
-      padding: 14px;
-      background: #111827;
-      border: 1px solid #1f2937;
-      border-radius: 14px;
+      align-items: center;
     }
 
     input {
-      flex: 1 1 220px;
-      min-width: 200px;
-      padding: 12px;
+      flex: 1 1 260px;
+      min-width: 220px;
+      padding: 12px 14px;
       border-radius: 10px;
       border: 1px solid #334155;
       background: #020617;
-      color: white;
+      color: #f8fafc;
+      outline: none;
     }
 
     button {
       padding: 12px 16px;
       border: 0;
       border-radius: 10px;
-      cursor: pointer;
       color: white;
+      cursor: pointer;
       font-weight: 700;
     }
 
-    .primary { background: #2563eb; }
-    .success { background: #16a34a; }
-    .danger { background: #dc2626; }
-    .dark { background: #334155; }
+    .btn-green { background: #16a34a; }
+    .btn-blue { background: #2563eb; }
+    .btn-red { background: #dc2626; }
+    .btn-gray { background: #334155; }
 
     .status {
-      margin-bottom: 16px;
-      padding: 12px 14px;
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    .videos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .video-card {
       background: #111827;
       border: 1px solid #1f2937;
-      border-radius: 14px;
-      color: #cbd5e1;
-      font-size: 14px;
+      border-radius: 16px;
+      padding: 12px;
     }
 
-    .stage {
-      position: relative;
+    .video-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    video {
       width: 100%;
-      aspect-ratio: 16 / 9;
+      min-height: 280px;
       background: black;
-      border-radius: 18px;
-      overflow: hidden;
-      border: 1px solid #1f2937;
-    }
-
-    #remote-video {
-      width: 100%;
-      height: 100%;
+      border-radius: 12px;
       object-fit: cover;
-      background: black;
+    }
+
+    #local-video {
+      transform: scaleX(-1);
       display: none;
     }
 
-    .remote-empty {
-      position: absolute;
-      inset: 0;
+    #remote-video {
+      display: none;
+    }
+
+    .placeholder {
+      min-height: 280px;
+      border-radius: 12px;
+      background: black;
+      color: #64748b;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #64748b;
       text-align: center;
       padding: 20px;
     }
 
-    .self-box {
-      position: absolute;
-      right: 16px;
-      bottom: 16px;
-      width: 26%;
-      max-width: 260px;
-      min-width: 130px;
-      aspect-ratio: 16 / 10;
-      background: #020617;
-      border: 1px solid #334155;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-
-    #local-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
+    #tap-play-btn {
       display: none;
-      background: black;
-    }
-
-    .local-empty {
       width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #64748b;
-      text-align: center;
-      padding: 10px;
-      font-size: 12px;
+      margin-top: 10px;
     }
 
-    #tap-to-play {
-      display: none;
-      margin-top: 12px;
-      width: 100%;
-    }
-
-    @media (max-width: 700px) {
-      .self-box {
-        width: 34%;
-        right: 10px;
-        bottom: 10px;
-      }
-
-      .brand {
-        font-size: 18px;
+    @media (max-width: 800px) {
+      .videos {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="topbar">
-      <div>
-        <div class="brand">Strive-Ops Live</div>
-        <div class="id-line">My ID: <span id="my-id">Connecting...</span></div>
+    <div class="header">
+      <div class="title">Strive-Ops</div>
+      <div class="subtitle">Phase 1 — Minimal browser-to-browser transmission test for the Strive-Ops Ecosystem</div>
+    </div>
+
+    <div class="card">
+      <div class="label">My Session ID</div>
+      <div id="my-id" class="id-box">Connecting...</div>
+    </div>
+
+    <div class="card">
+      <div class="controls">
+        <button id="start-camera-btn" class="btn-green">Start Camera</button>
+        <button id="copy-id-btn" class="btn-gray">Copy My ID</button>
+        <input id="remote-id-input" placeholder="Paste remote ID here" />
+        <button id="call-btn" class="btn-blue">Call</button>
+        <button id="hangup-btn" class="btn-red">Hang Up</button>
       </div>
-      <button id="copy-id-btn" class="dark">Copy My ID</button>
     </div>
 
-    <div class="controls">
-      <button id="start-camera-btn" class="success">Start Camera</button>
-      <input id="peer-id-input" placeholder="Paste coach or host ID here" />
-      <button id="join-call-btn" class="primary">Join Session</button>
-      <button id="end-call-btn" class="danger">End Call</button>
+    <div class="card status" id="status">
+      Ready. Start camera on one browser, then call it from the other browser.
     </div>
 
-    <div id="status" class="status">Ready. Start your camera on the broadcasting device, then join from the other device.</div>
-
-    <div class="stage">
-      <video id="remote-video" autoplay playsinline></video>
-      <div id="remote-empty" class="remote-empty">Remote live video will appear here.</div>
-
-      <div class="self-box">
+    <div class="videos">
+      <div class="video-card">
+        <div class="video-title">Local Preview</div>
         <video id="local-video" autoplay muted playsinline></video>
-        <div id="local-empty" class="local-empty">Your camera preview</div>
+        <div id="local-placeholder" class="placeholder">Your local camera preview will appear here.</div>
+      </div>
+
+      <div class="video-card">
+        <div class="video-title">Remote Feed</div>
+        <video id="remote-video" autoplay playsinline></video>
+        <div id="remote-placeholder" class="placeholder">The other browser’s video feed will appear here.</div>
+        <button id="tap-play-btn" class="btn-blue">Tap to Start Remote Video</button>
       </div>
     </div>
-
-    <button id="tap-to-play" class="primary">Tap to Start Remote Video</button>
   </div>
 
   <script src="app.js?v=1"></script>
