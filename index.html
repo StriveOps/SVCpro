@@ -12,12 +12,13 @@
 <style>
 :root{
   --bg0:#04060f;--bg1:#080c1a;--bg2:#0c1122;--bg3:#111829;--bg4:#182035;
-  --bd:rgba(255,255,255,0.07);--bdh:rgba(255,255,255,0.14);
+  --bd:rgba(255,255,255,.07);--bdh:rgba(255,255,255,.14);
   --t1:#dde6ff;--t2:#8494b8;--t3:#3d4e72;
-  --ac:#2dd4bf;--adim:rgba(45,212,191,0.11);--aglow:rgba(45,212,191,0.20);
-  --red:#f87171;--rdim:rgba(248,113,113,0.13);
-  --amb:#fbbf24;--amdim:rgba(251,191,36,0.12);
-  --pw:320px;--tbh:68px;--tph:50px;
+  --ac:#2dd4bf;--adim:rgba(45,212,191,.11);--aglow:rgba(45,212,191,.22);
+  --red:#f87171;--rdim:rgba(248,113,113,.13);
+  --amb:#fbbf24;--amdim:rgba(251,191,36,.12);
+  --grn:#4ade80;--gdim:rgba(74,222,128,.12);
+  --pw:320px;--tbh:68px;--tph:50px;--thumbH:130px;
   --fu:'Barlow',sans-serif;--fb:'Barlow Condensed',sans-serif;--fm:'JetBrains Mono',monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -25,80 +26,163 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
 .app{display:flex;flex-direction:column;height:100vh}
 
-/* TOPBAR */
-.topbar{height:var(--tph);min-height:var(--tph);background:var(--bg1);border-bottom:1px solid var(--bd);
-  display:flex;align-items:center;gap:12px;padding:0 18px;flex-shrink:0}
+/* ── TOPBAR ──────────────────────────────── */
+.topbar{
+  height:var(--tph);min-height:var(--tph);background:var(--bg1);
+  border-bottom:1px solid var(--bd);display:flex;align-items:center;
+  gap:12px;padding:0 18px;flex-shrink:0;
+}
 .tb-brand{font-family:var(--fb);font-size:20px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
 .tb-brand em{color:var(--ac);font-style:normal}
 .tb-sep{width:1px;height:22px;background:var(--bd);flex-shrink:0}
-.tb-sname{font-size:13px;font-weight:600;color:var(--t2)}
-.tb-pin{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;
-  border-radius:20px;background:var(--adim);border:1px solid rgba(45,212,191,.2);color:var(--ac)}
+.tb-sname{font-size:13px;font-weight:600;color:var(--t2);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-pin{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  padding:3px 9px;border-radius:20px;background:var(--adim);
+  border:1px solid rgba(45,212,191,.2);color:var(--ac)}
 .tb-timer{font-family:var(--fm);font-size:12px;color:var(--t2);min-width:48px}
 .tb-sp{flex:1}
-.tb-status{font-family:var(--fm);font-size:11px;color:var(--t3);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tb-dot{width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:background .3s,box-shadow .3s}
+.tb-status{font-family:var(--fm);font-size:11px;color:var(--t3);
+  max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-dot{width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:all .3s}
 .tb-dot.on{background:var(--ac);box-shadow:0 0 8px var(--ac)}
 .tb-dot.ring{background:var(--amb);box-shadow:0 0 8px var(--amb);animation:bl .8s infinite}
 .tb-dot.live{background:var(--red);box-shadow:0 0 8px var(--red)}
 @keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
 
-/* MIDDLE */
+/* ── MIDDLE ──────────────────────────────── */
 .middle{flex:1;display:flex;min-height:0;overflow:hidden}
 
-/* VIDEO STAGE */
-.vstage{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
-  padding:14px;gap:12px;background:var(--bg0);position:relative}
-.vstage.sharing .tile-screen{flex:1.8}
-.vstage.sharing .tile-local{flex:0.55;max-width:260px}
+/* ── VIDEO STAGE ─────────────────────────── */
+.vstage{
+  flex:1;min-width:0;display:flex;flex-direction:column;
+  padding:12px;gap:10px;background:var(--bg0);position:relative;
+}
 
-.vtile{flex:1;aspect-ratio:16/9;max-height:100%;background:#000;border-radius:14px;
-  overflow:hidden;position:relative;border:1px solid var(--bd);display:flex;flex-direction:column}
+/* DEFAULT: camera strip fills entire stage as a normal side-by-side grid */
+.thumb-strip{
+  flex:1;min-height:0;
+  display:flex;gap:12px;
+  justify-content:center;
+}
 
-.th{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;
-  justify-content:space-between;padding:8px 12px;z-index:2;
-  background:linear-gradient(to bottom,rgba(0,0,0,.65) 0%,transparent 100%)}
-.tname{font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8)}
-.tbadge{font-size:9px;font-weight:700;font-family:var(--fm);padding:2px 7px;border-radius:20px;letter-spacing:.06em}
-.b-off{background:rgba(0,0,0,.4);color:var(--t3);border:1px solid rgba(255,255,255,.1)}
-.b-live{background:rgba(248,113,113,.2);color:var(--red);border:1px solid rgba(248,113,113,.3);animation:bl 2s infinite}
-.b-conn{background:rgba(45,212,191,.15);color:var(--ac);border:1px solid rgba(45,212,191,.25)}
-.b-shr{background:rgba(251,191,36,.15);color:var(--amb);border:1px solid rgba(251,191,36,.25);animation:bl 2s infinite}
+/* DEFAULT: each camera tile expands to fill available space */
+.vthumb{
+  flex:1;min-width:0;max-width:50%;
+  height:100%;
+  background:#000;border-radius:12px;
+  overflow:hidden;position:relative;
+  border:2px solid var(--bd);
+  transition:all .25s ease;
+}
+.vthumb:hover{border-color:var(--bdh)}
+.vthumb.speaking{border-color:var(--ac);box-shadow:0 0 10px rgba(45,212,191,.3)}
 
-.tbody{flex:1;position:relative;overflow:hidden}
-.tbody video,.tbody canvas{width:100%;height:100%;object-fit:cover;display:block}
+/* ── PRESENTATION MODE — only active while screen sharing ── */
+.vstage.presenting .thumb-strip{
+  flex:0 0 var(--thumbH);
+  height:var(--thumbH);
+  min-height:var(--thumbH);
+  justify-content:center;
+}
+.vstage.presenting .vthumb{
+  flex:0 0 auto;
+  width:calc(var(--thumbH) * 16 / 9);
+  max-width:none;
+  height:var(--thumbH);
+  border-radius:10px;
+}
+
+.vthumb .th{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 8px;z-index:2;
+  background:linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 100%);
+}
+.vthumb .tname{font-size:11px;font-weight:600;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.vthumb .tbadge{font-size:8px;font-weight:700;font-family:var(--fm);
+  padding:1px 5px;border-radius:20px;letter-spacing:.06em;flex-shrink:0}
+.b-off{background:rgba(0,0,0,.5);color:var(--t3);border:1px solid rgba(255,255,255,.08)}
+.b-live{background:rgba(248,113,113,.25);color:var(--red);border:1px solid rgba(248,113,113,.4);animation:bl 2s infinite}
+.b-conn{background:rgba(45,212,191,.2);color:var(--ac);border:1px solid rgba(45,212,191,.3)}
+.b-wait{background:rgba(251,191,36,.2);color:var(--amb);border:1px solid rgba(251,191,36,.3)}
+
+.vthumb video,.vthumb canvas{width:100%;height:100%;object-fit:cover;display:block}
 #local-canvas{transform:scaleX(-1);display:none}
 #remote-video{display:none}
-#screen-preview{display:none;width:100%;height:100%;object-fit:contain;background:#000}
 
-.tempty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:10px;background:var(--bg2)}
-.tei{width:48px;height:48px;border-radius:12px;background:var(--bg3);border:1px solid var(--bd);
-  display:flex;align-items:center;justify-content:center}
-.tet{font-size:12px;color:var(--t3);text-align:center;max-width:180px;line-height:1.6}
+.vthumb .tempty{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;background:var(--bg3)}
+.vthumb .tempty svg{opacity:.4}
+.vthumb .tet{font-size:9px;color:var(--t3);text-align:center}
 
-.muted-ico{position:absolute;bottom:10px;left:10px;z-index:3;width:28px;height:28px;
-  border-radius:50%;background:rgba(248,113,113,.9);display:none;align-items:center;justify-content:center}
+.muted-ico{
+  position:absolute;top:6px;right:6px;z-index:3;
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(248,113,113,.9);display:none;align-items:center;justify-content:center}
 .muted-ico.show{display:flex}
 
-#tap-play{display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
-  padding:8px 18px;border-radius:20px;border:1px solid rgba(45,212,191,.3);
-  background:var(--adim);color:var(--ac);font-family:var(--fu);font-size:12px;font-weight:700;
-  cursor:pointer;z-index:5;white-space:nowrap}
+/* MAIN CONTENT AREA — hidden until screen sharing starts */
+.main-area{
+  display:none;
+  min-height:0;position:relative;border-radius:12px;
+  overflow:hidden;background:#000;border:1px solid var(--bd);
+}
+.vstage.presenting .main-area{
+  display:block;
+  flex:1;
+}
 
-/* SIDE PANEL */
-.spanel{width:var(--pw);min-width:var(--pw);background:var(--bg1);border-left:1px solid var(--bd);
-  display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;overflow:hidden}
+/* Default state (no screen share): big message */
+.no-share-msg{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;
+}
+.no-share-icon{font-size:40px;opacity:.3}
+.no-share-text{font-size:13px;color:var(--t3);text-align:center;line-height:1.7}
+
+/* Screen share fills main area */
+#screen-video{
+  width:100%;height:100%;object-fit:contain;
+  background:#000;display:none;
+}
+
+.share-label{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  display:none;align-items:center;gap:7px;
+  padding:4px 12px;border-radius:20px;
+  background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);
+  font-size:11px;font-weight:700;color:var(--amb);
+  font-family:var(--fm);letter-spacing:.06em;z-index:5;
+}
+.share-label.show{display:flex}
+.share-dot{width:6px;height:6px;border-radius:50%;background:var(--amb);animation:bl 1s infinite}
+
+#tap-play{
+  display:none;position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  padding:8px 20px;border-radius:20px;border:1px solid rgba(45,212,191,.3);
+  background:var(--adim);color:var(--ac);font-family:var(--fu);
+  font-size:12px;font-weight:700;cursor:pointer;z-index:5;white-space:nowrap;
+}
+
+/* ── SIDE PANEL ──────────────────────────── */
+.spanel{
+  width:var(--pw);min-width:var(--pw);background:var(--bg1);
+  border-left:1px solid var(--bd);display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .22s ease;overflow:hidden;
+}
 .spanel.open{transform:translateX(0)}
-.ph{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
-  border-bottom:1px solid var(--bd);flex-shrink:0}
+.ph{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--bd);flex-shrink:0}
 .ph-title{font-size:13px;font-weight:700}
-.ph-x{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:var(--bg3);
-  color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:16px;transition:background .13s}
+.ph-x{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);
+  background:var(--bg3);color:var(--t2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  transition:background .13s}
 .ph-x:hover{background:var(--bg4)}
 
-/* CHAT */
+/* Chat */
 #chat-panel{display:flex;flex-direction:column;flex:1;min-height:0}
 .cmsg-wrap{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
 .cmsg{display:flex;flex-direction:column;gap:3px}
@@ -108,47 +192,68 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 .cmsg.them .cbubble{background:var(--bg3);border:1px solid var(--bd);border-bottom-left-radius:3px}
 .cmeta{font-size:10px;color:var(--t3);font-family:var(--fm)}
 .cinput-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--bd);flex-shrink:0}
-.cinput{flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg0);
-  color:var(--t1);font-family:var(--fu);font-size:13px;outline:none;transition:border-color .13s}
-.cinput::placeholder{color:var(--t3)}
-.cinput:focus{border-color:var(--ac)}
+.cinput{flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--bd);
+  background:var(--bg0);color:var(--t1);font-family:var(--fu);font-size:13px;outline:none;transition:border-color .13s}
+.cinput::placeholder{color:var(--t3)}.cinput:focus{border-color:var(--ac)}
 .csend{width:38px;height:38px;border-radius:10px;border:0;background:var(--ac);color:#022c22;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;
-  transition:opacity .13s;flex-shrink:0}
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:opacity .13s}
 .csend:hover{opacity:.85}
 .cempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:8px;color:var(--t3);font-size:12px;text-align:center}
 
-/* MEMBERS */
+/* Members */
 #members-panel{flex-direction:column;flex:1;min-height:0;display:none}
-.mlist{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
-.mcard{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
-  background:var(--bg2);border:1px solid var(--bd)}
+.mlist{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+
+/* Lobby section in members */
+.lobby-section{padding:10px 12px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.lobby-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:8px}
+.lobby-card{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:10px;background:var(--amdim);border:1px solid rgba(251,191,36,.2);
+  margin-bottom:6px;
+}
+.lobby-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg4);
+  display:flex;align-items:center;justify-content:center;font-family:var(--fb);
+  font-size:12px;font-weight:700;color:var(--amb);flex-shrink:0}
+.lobby-info{flex:1;min-width:0}
+.lobby-name{font-size:12px;font-weight:600;color:var(--amb)}
+.lobby-sub{font-size:10px;color:var(--t3);font-family:var(--fm)}
+.lobby-actions{display:flex;gap:6px}
+.lobby-btn{padding:5px 10px;border-radius:7px;border:0;cursor:pointer;
+  font-family:var(--fu);font-size:11px;font-weight:700;transition:opacity .13s}
+.lobby-btn:hover{opacity:.85}
+.lobby-btn.admit{background:var(--grn);color:#052e16}
+.lobby-btn.deny{background:var(--rdim);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+
+.mcard{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--bd)}
 .mavatar{width:36px;height:36px;border-radius:50%;background:var(--bg4);border:1px solid var(--bd);
-  display:flex;align-items:center;justify-content:center;font-family:var(--fb);font-size:14px;
-  font-weight:700;color:var(--ac);flex-shrink:0}
+  display:flex;align-items:center;justify-content:center;font-family:var(--fb);
+  font-size:14px;font-weight:700;color:var(--ac);flex-shrink:0}
 .minfo{flex:1;min-width:0}
 .mname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mid{font-family:var(--fm);font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mid{font-family:var(--fm);font-size:9px;color:var(--t3)}
 .micons{display:flex;gap:5px;flex-shrink:0}
-.mi{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;background:var(--bg4)}
+.mi{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--bg4)}
 .mi.off{background:var(--rdim)}
 
-/* TOOLBAR */
-.toolbar{height:var(--tbh);min-height:var(--tbh);background:var(--bg1);border-top:1px solid var(--bd);
-  display:flex;align-items:center;justify-content:center;gap:4px;padding:0 16px;flex-shrink:0}
+/* ── TOOLBAR ─────────────────────────────── */
+.toolbar{
+  height:var(--tbh);min-height:var(--tbh);background:var(--bg1);
+  border-top:1px solid var(--bd);display:flex;align-items:center;
+  justify-content:center;gap:4px;padding:0 16px;flex-shrink:0;
+}
 .tsep{width:1px;height:36px;background:var(--bd);margin:0 6px;flex-shrink:0}
-.ctl{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:0 3px;min-width:58px}
+.ctl{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:0 3px;min-width:56px}
 .cbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--bd);background:var(--bg3);
   color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all .13s;position:relative;flex-shrink:0}
 .cbtn:hover{background:var(--bg4);border-color:var(--bdh)}
 .cbtn.muted{background:var(--rdim);border-color:rgba(248,113,113,.3);color:var(--red)}
 .cbtn.active{background:var(--adim);border-color:rgba(45,212,191,.3);color:var(--ac)}
-.cbtn.sharing{background:var(--amdim);border-color:rgba(251,191,36,.3);color:var(--amb);animation:bl 2s infinite}
+.cbtn.sharing{background:var(--amdim);border-color:rgba(251,191,36,.3);color:var(--amb)}
 .cbtn.end-btn{background:var(--rdim);border-color:rgba(248,113,113,.3);color:var(--red);
-  min-width:76px;border-radius:22px;width:auto;padding:0 14px;gap:6px;font-size:13px;font-weight:700}
+  min-width:72px;border-radius:22px;width:auto;padding:0 14px;gap:6px;font-size:13px;font-weight:700}
 .cbtn.end-btn:hover{background:rgba(248,113,113,.22)}
 .clbl{font-size:10px;font-weight:600;color:var(--t3);white-space:nowrap}
 .cbadge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;
@@ -156,22 +261,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
   color:#fff;display:none;align-items:center;justify-content:center}
 .cbadge.on{display:flex}
 
-/* OVERLAYS */
+/* ── OVERLAYS & MODALS ───────────────────── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);
   align-items:center;justify-content:center;z-index:9000;padding:20px}
 .overlay.show{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--bdh);border-radius:18px;width:100%;
-  animation:fup .2s ease}
+.modal{background:var(--bg2);border:1px solid var(--bdh);border-radius:18px;width:100%;animation:fup .2s ease}
 @keyframes fup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.mhd{display:flex;align-items:center;justify-content:space-between;
-  padding:16px 20px;border-bottom:1px solid var(--bd)}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd)}
 .mtitle{font-family:var(--fb);font-size:18px;font-weight:700;letter-spacing:.03em}
 .mx{width:30px;height:30px;border-radius:8px;border:1px solid var(--bd);background:var(--bg3);
-  color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:18px;transition:background .13s}
+  color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background .13s}
 .mx:hover{background:var(--bg4)}
-.mbody{padding:16px 20px;display:flex;flex-direction:column;gap:14px;
-  max-height:80vh;overflow-y:auto}
+.mbody{padding:16px 20px;display:flex;flex-direction:column;gap:14px;max-height:80vh;overflow-y:auto}
 .msec{display:flex;flex-direction:column;gap:8px}
 .msec-ttl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
 .mrow{display:flex;flex-direction:column;gap:4px}
@@ -182,7 +283,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233d4e72' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
 .msel:focus,.minp:focus{border-color:var(--ac)}
-.minp{background-image:none;padding-right:11px;letter-spacing:.1em;font-family:var(--fm)}
+.minp{background-image:none;padding-right:11px;font-family:var(--fu);letter-spacing:0}
+.minp.mono{font-family:var(--fm);letter-spacing:.1em}
 .mbtn{padding:9px 14px;border-radius:9px;border:1px solid var(--bd);background:var(--bg3);
   color:var(--t1);cursor:pointer;font-family:var(--fu);font-size:13px;font-weight:600;
   transition:all .13s;text-align:center;width:100%}
@@ -192,10 +294,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 .mr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mfx{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .mchip{padding:9px 4px 7px;border-radius:9px;border:1px solid var(--bd);background:var(--bg3);
-  cursor:pointer;text-align:center;transition:all .13s;display:flex;flex-direction:column;
-  align-items:center;gap:4px}
-.mchip:hover{background:var(--bg4);border-color:var(--bdh)}
-.mchip.on{background:var(--adim);border-color:rgba(45,212,191,.3)}
+  cursor:pointer;text-align:center;transition:all .13s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mchip:hover{background:var(--bg4)}.mchip.on{background:var(--adim);border-color:rgba(45,212,191,.3)}
 .mchip .ci{font-size:17px}.mchip .cn{font-size:9px;font-weight:700;color:var(--t2)}
 .mchip.on .cn{color:var(--ac)}
 .pin-bar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
@@ -203,44 +303,59 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 .pdot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:all .3s}
 .pdot.on{background:var(--ac);box-shadow:0 0 6px var(--ac)}
 
-/* SHARE */
-.sbox{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:10px;
-  background:var(--bg0);border:1px solid var(--bd)}
-.stext{flex:1;font-family:var(--fm);font-size:11px;color:var(--ac);overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.cpbtn{padding:5px 12px;border-radius:7px;border:0;background:var(--adim);color:var(--ac);
-  cursor:pointer;font-family:var(--fu);font-size:12px;font-weight:700;white-space:nowrap;transition:background .13s}
+/* Share modal */
+.sbox{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:10px;background:var(--bg0);border:1px solid var(--bd)}
+.stext{flex:1;font-family:var(--fm);font-size:11px;color:var(--ac);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cpbtn{padding:5px 12px;border-radius:7px;border:0;background:var(--adim);color:var(--ac);cursor:pointer;font-family:var(--fu);font-size:12px;font-weight:700;white-space:nowrap;transition:background .13s}
 .cpbtn:hover{background:var(--aglow)}
-.pin-disp{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
-  border-radius:10px;background:var(--amdim);border:1px solid rgba(251,191,36,.2)}
-.pd-lbl{font-size:11px;color:var(--t2)}
-.pd-val{font-family:var(--fm);font-size:18px;font-weight:700;letter-spacing:.25em;color:var(--amb)}
+.pin-disp{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--amdim);border:1px solid rgba(251,191,36,.2)}
+.pd-lbl{font-size:11px;color:var(--t2)}.pd-val{font-family:var(--fm);font-size:18px;font-weight:700;letter-spacing:.25em;color:var(--amb)}
 
-/* INCOMING / JOIN */
-.cring{width:60px;height:60px;border-radius:50%;background:var(--adim);border:2px solid rgba(45,212,191,.3);
-  display:flex;align-items:center;justify-content:center;font-size:24px;animation:bl 1s infinite}
+/* Incoming / PIN */
+.cring{width:60px;height:60px;border-radius:50%;background:var(--adim);border:2px solid rgba(45,212,191,.3);display:flex;align-items:center;justify-content:center;font-size:24px;animation:bl 1s infinite}
 .ctitle{font-family:var(--fb);font-size:20px;font-weight:700;letter-spacing:.03em}
 .cpeer{font-family:var(--fm);font-size:11px;color:var(--t2);word-break:break-all}
-.cpinnote{font-size:11px;color:var(--amb);background:var(--amdim);border:1px solid rgba(251,191,36,.2);
-  padding:6px 12px;border-radius:8px;width:100%;text-align:center}
+.cpinnote{font-size:11px;color:var(--amb);background:var(--amdim);border:1px solid rgba(251,191,36,.2);padding:6px 12px;border-radius:8px;width:100%;text-align:center}
 .jbtns{display:flex;gap:10px;width:100%}
-.jbtn{flex:1;padding:11px 0;border-radius:10px;border:0;cursor:pointer;font-family:var(--fu);
-  font-size:13px;font-weight:700;transition:opacity .13s}
+.jbtn{flex:1;padding:11px 0;border-radius:10px;border:0;cursor:pointer;font-family:var(--fu);font-size:13px;font-weight:700;transition:opacity .13s}
 .jbtn:hover{opacity:.85}
-.jbtn.ok{background:var(--ac);color:#022c22}
-.jbtn.no{background:var(--bg4);color:var(--t2)}
-.jbtn.bad{background:var(--rdim);color:var(--red)}
+.jbtn.ok{background:var(--ac);color:#022c22}.jbtn.no{background:var(--bg4);color:var(--t2)}.jbtn.bad{background:var(--rdim);color:var(--red)}
 .pin-row{display:flex;gap:8px;justify-content:center}
-.pdig{width:52px;height:58px;text-align:center;border-radius:10px;border:1px solid var(--bd);
-  background:var(--bg0);color:var(--t1);font-family:var(--fm);font-size:22px;font-weight:700;
-  outline:none;transition:border-color .13s;caret-color:var(--ac)}
+.pdig{width:52px;height:58px;text-align:center;border-radius:10px;border:1px solid var(--bd);background:var(--bg0);color:var(--t1);font-family:var(--fm);font-size:22px;font-weight:700;outline:none;transition:border-color .13s;caret-color:var(--ac)}
 .pdig:focus{border-color:var(--ac)}
+
+/* ── LOBBY / NAME ENTRY MODAL ────────────── */
+#lobby-ov .modal{max-width:400px}
+.lobby-modal-body{padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+.lobby-logo{font-family:var(--fb);font-size:28px;font-weight:700;letter-spacing:.03em}
+.lobby-logo em{color:var(--ac);font-style:normal}
+.lobby-desc{font-size:13px;color:var(--t2);line-height:1.6;max-width:300px}
+.lobby-session-name{
+  font-size:15px;font-weight:600;color:var(--t1);
+  padding:8px 16px;border-radius:8px;background:var(--bg3);
+  border:1px solid var(--bd);width:100%;text-align:center;
+}
+.lobby-name-input{
+  width:100%;padding:12px 14px;border-radius:10px;border:2px solid var(--bd);
+  background:var(--bg0);color:var(--t1);font-family:var(--fu);font-size:15px;
+  font-weight:600;outline:none;text-align:center;transition:border-color .15s;
+}
+.lobby-name-input::placeholder{color:var(--t3);font-weight:400}
+.lobby-name-input:focus{border-color:var(--ac)}
+.lobby-join-btn{
+  width:100%;padding:13px 0;border-radius:12px;border:0;
+  background:var(--ac);color:#022c22;font-family:var(--fu);
+  font-size:15px;font-weight:700;cursor:pointer;transition:opacity .13s;
+}
+.lobby-join-btn:hover{opacity:.88}
+.lobby-pin-section{width:100%;display:flex;flex-direction:column;gap:10px;align-items:center}
+.lobby-pin-label{font-size:11px;color:var(--t3)}
 .hidden{display:none!important}
 
 @media(max-width:700px){
-  .vstage{flex-direction:column;padding:8px;gap:8px}
-  .vtile{max-height:45%}
+  :root{--thumbH:90px}
   .clbl{display:none}.ctl{min-width:44px}.toolbar{gap:2px}
+  .spanel{position:absolute;right:0;top:0;bottom:0;z-index:100;border-radius:0}
 }
 </style>
 </head>
@@ -267,50 +382,55 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 <div class="middle">
   <div class="vstage" id="vstage">
 
-    <!-- LOCAL -->
-    <div class="vtile" id="tile-local">
-      <div class="th">
-        <div class="tname">You</div>
-        <div class="tbadge b-off" id="local-badge">OFFLINE</div>
-      </div>
-      <div class="tbody">
+    <!-- THUMBNAIL STRIP (cameras always on top) -->
+    <div class="thumb-strip" id="thumb-strip">
+
+      <!-- LOCAL THUMB -->
+      <div class="vthumb" id="thumb-local">
         <canvas id="local-canvas"></canvas>
         <div class="tempty" id="local-empty">
-          <div class="tei"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
-          <div class="tet">Click <strong style="color:#8494b8">Camera</strong> in the toolbar to begin</div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <div class="tet">Start Camera</div>
         </div>
         <div class="muted-ico" id="local-mico">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23M12 19v4M8 23h8"/></svg>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23M12 19v4M8 23h8"/></svg>
+        </div>
+        <div class="th">
+          <div class="tname" id="local-tname">You</div>
+          <div class="tbadge b-off" id="local-badge">OFF</div>
         </div>
       </div>
-    </div>
 
-    <!-- SCREEN SHARE TILE -->
-    <div class="vtile hidden" id="tile-screen">
-      <div class="th">
-        <div class="tname">Screen Share</div>
-        <div class="tbadge b-shr">SHARING</div>
-      </div>
-      <div class="tbody">
-        <video id="screen-preview" autoplay muted playsinline></video>
-      </div>
-    </div>
-
-    <!-- REMOTE -->
-    <div class="vtile" id="tile-remote">
-      <div class="th">
-        <div class="tname" id="remote-tname">Remote Peer</div>
-        <div class="tbadge b-off" id="remote-badge">NO SIGNAL</div>
-      </div>
-      <div class="tbody">
+      <!-- REMOTE THUMB -->
+      <div class="vthumb" id="thumb-remote">
         <video id="remote-video" autoplay playsinline></video>
         <div class="tempty" id="remote-empty">
-          <div class="tei"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.37a19.79 19.79 0 01-3.07-8.63A2 2 0 012.36 0H5a2 2 0 012 1.72"/><path d="M23 23L1 1"/></svg></div>
-          <div class="tet">Waiting for peer…</div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07"/><path d="M23 23L1 1"/></svg>
+          <div class="tet">No peer</div>
         </div>
-        <div class="muted-ico" id="remote-mico"></div>
-        <button id="tap-play">▶ Tap to Start Playback</button>
+        <div class="th">
+          <div class="tname" id="remote-tname">Waiting…</div>
+          <div class="tbadge b-off" id="remote-badge">—</div>
+        </div>
       </div>
+
+    </div><!-- /thumb-strip -->
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-area" id="main-area">
+      <div class="no-share-msg" id="no-share-msg">
+        <div class="no-share-icon">🖥️</div>
+        <div class="no-share-text">
+          Screen share will appear here<br>
+          <span style="font-size:11px;color:var(--t3)">Click <strong style="color:var(--t2)">Share</strong> in the toolbar to present your screen</span>
+        </div>
+      </div>
+      <video id="screen-video" autoplay muted playsinline></video>
+      <div class="share-label" id="share-label">
+        <div class="share-dot"></div>
+        SCREEN SHARING
+      </div>
+      <button id="tap-play">▶ Tap to Start Playback</button>
     </div>
 
   </div><!-- /vstage -->
@@ -324,7 +444,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
     <div id="chat-panel">
       <div class="cmsg-wrap" id="cmsg-wrap">
         <div class="cempty" id="cempty">
-          <span style="font-size:28px">💬</span>
+          <span style="font-size:26px">💬</span>
           Messages are sent over your direct peer connection.
         </div>
       </div>
@@ -334,9 +454,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
       </div>
     </div>
     <div id="members-panel">
+      <div class="lobby-section hidden" id="lobby-section">
+        <div class="lobby-label">⏳ Waiting in Lobby</div>
+        <div id="lobby-list"></div>
+      </div>
       <div class="mlist" id="mlist"></div>
     </div>
   </div>
+
 </div><!-- /middle -->
 
 <!-- TOOLBAR -->
@@ -398,23 +523,51 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 
 </div><!-- /app -->
 
-<!-- SETTINGS MODAL -->
+<!-- ═══ LOBBY / NAME ENTRY MODAL ═══ -->
+<div class="overlay show" id="lobby-ov">
+<div class="modal" style="max-width:400px">
+  <div class="lobby-modal-body">
+    <div class="lobby-logo">Strive<em>-Ops</em></div>
+    <div class="lobby-session-name" id="lobby-session-label">Coaching Session</div>
+    <div class="lobby-desc">Enter your name to join. The host will be notified and can admit you.</div>
+
+    <input class="lobby-name-input" id="lobby-name-in" placeholder="Your full name…" maxlength="40"
+      onkeydown="if(event.key==='Enter')lobbyJoin()"/>
+
+    <div class="lobby-pin-section hidden" id="lobby-pin-section">
+      <div class="lobby-pin-label">This session requires a PIN from your coach</div>
+      <div class="pin-row">
+        <input class="pdig" id="lp0" maxlength="1" type="password" inputmode="numeric"/>
+        <input class="pdig" id="lp1" maxlength="1" type="password" inputmode="numeric"/>
+        <input class="pdig" id="lp2" maxlength="1" type="password" inputmode="numeric"/>
+        <input class="pdig" id="lp3" maxlength="1" type="password" inputmode="numeric"/>
+      </div>
+    </div>
+
+    <button class="lobby-join-btn" onclick="lobbyJoin()">Join Session</button>
+
+    <div style="font-size:10px;color:var(--t3);font-family:var(--fm)" id="lobby-id-display"></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SETTINGS MODAL ═══ -->
 <div class="overlay" id="settings-ov">
 <div class="modal" style="max-width:460px">
   <div class="mhd"><div class="mtitle">⚙️ Settings</div><button class="mx" onclick="CO('settings-ov')">×</button></div>
   <div class="mbody">
     <div class="msec">
       <div class="msec-ttl">Session</div>
-      <div class="mrow"><div class="mlbl">Display Name</div>
-        <input class="minp" id="sname-in" placeholder="e.g. Coaching — John Doe" style="font-family:var(--fu);letter-spacing:0"/>
+      <div class="mrow"><div class="mlbl">Session Display Name</div>
+        <input class="minp" id="sname-in" placeholder="e.g. Coaching — John Doe"/>
       </div>
       <button class="mbtn ac" onclick="applyName()">Apply Name</button>
     </div>
     <div class="msec">
-      <div class="msec-ttl">🔒 Security</div>
+      <div class="msec-ttl">🔒 Security — Session PIN</div>
       <div class="pin-bar"><div class="pdot" id="pdot"></div><span id="pstatus">No PIN — anyone with your link can join</span></div>
-      <div class="mrow"><div class="mlbl">Session PIN (4–6 digits)</div>
-        <input class="minp" id="pin-in" type="password" maxlength="6" placeholder="Enter PIN…" inputmode="numeric"/>
+      <div class="mrow"><div class="mlbl">Set PIN (4–6 digits)</div>
+        <input class="minp mono" id="pin-in" type="password" maxlength="6" placeholder="Enter PIN…" inputmode="numeric"/>
       </div>
       <div class="mr2">
         <button class="mbtn ac" onclick="applyPin()">Set PIN</button>
@@ -424,7 +577,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
     <div class="msec">
       <div class="msec-ttl">📷 Camera</div>
       <div class="mrow"><div class="mlbl">Active Camera</div>
-        <select id="cam-sel" class="msel"><option>Start camera to detect devices</option></select>
+        <select id="cam-sel" class="msel"><option>Start camera to detect</option></select>
       </div>
       <div class="mr2">
         <button class="mbtn ac" onclick="switchCam()">Switch Camera</button>
@@ -434,7 +587,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
     <div class="msec">
       <div class="msec-ttl">🎤 Microphone</div>
       <div class="mrow"><div class="mlbl">Active Microphone</div>
-        <select id="mic-sel" class="msel"><option>Start camera to detect devices</option></select>
+        <select id="mic-sel" class="msel"><option>Start camera to detect</option></select>
       </div>
       <div class="mrow"><div class="mlbl">Audio Profile</div>
         <select id="aprof-sel" class="msel">
@@ -465,27 +618,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 </div>
 </div>
 
-<!-- SHARE / INVITE MODAL -->
+<!-- ═══ SHARE / INVITE MODAL ═══ -->
 <div class="overlay" id="share-ov">
 <div class="modal" style="max-width:420px">
   <div class="mhd"><div class="mtitle">🔗 Invite to Session</div><button class="mx" onclick="CO('share-ov')">×</button></div>
   <div class="mbody">
     <div class="msec">
       <div class="msec-ttl">Your Session ID</div>
-      <div class="sbox"><div class="stext" id="sh-id">—</div><button class="cpbtn" onclick="cpText('sh-id')">Copy ID</button></div>
+      <div class="sbox"><div class="stext" id="sh-id">—</div><button class="cpbtn" onclick="cpEl('sh-id')">Copy ID</button></div>
     </div>
     <div class="msec">
-      <div class="msec-ttl">Join Link</div>
-      <div class="sbox"><div class="stext" id="sh-link">—</div><button class="cpbtn" onclick="cpText('sh-link')">Copy Link</button></div>
+      <div class="msec-ttl">Join Link — send this to your client</div>
+      <div class="sbox"><div class="stext" id="sh-link">—</div><button class="cpbtn" onclick="cpEl('sh-link')">Copy Link</button></div>
     </div>
     <div id="sh-pin-row" class="msec hidden">
-      <div class="msec-ttl">Session PIN — share with your client</div>
+      <div class="msec-ttl">Session PIN — share privately with your client</div>
       <div class="pin-disp"><span class="pd-lbl">Current PIN:</span><span class="pd-val" id="sh-pin-val">—</span></div>
     </div>
     <div class="msec">
-      <div class="msec-ttl">Connect to a Peer</div>
-      <div class="mrow"><div class="mlbl">Paste Remote Session ID</div>
-        <input class="minp" id="remote-id-in" placeholder="so-xxxxxx" style="font-family:var(--fm);letter-spacing:.1em"/>
+      <div class="msec-ttl">Connect to a Peer Directly</div>
+      <div class="mrow"><div class="mlbl">Remote Session ID</div>
+        <input class="minp mono" id="remote-id-in" placeholder="so-xxxxxx"/>
       </div>
       <button class="mbtn ac" onclick="connectToPeer()">Connect</button>
     </div>
@@ -493,14 +646,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 </div>
 </div>
 
-<!-- INCOMING CALL -->
+<!-- ═══ INCOMING CALL MODAL ═══ -->
 <div class="overlay" id="incoming-ov">
 <div class="modal" style="max-width:320px">
   <div class="mbody" style="align-items:center;text-align:center;gap:12px;padding:28px 24px">
     <div class="cring">📞</div>
     <div class="ctitle">Incoming Session</div>
     <div class="cpeer" id="caller-display">unknown</div>
-    <div class="cpinnote hidden" id="pin-warn">⚠️ Session is PIN-protected — verify your client's PIN</div>
+    <div class="cpinnote hidden" id="pin-warn">⚠️ Session is PIN-protected</div>
     <div class="jbtns">
       <button class="jbtn ok" onclick="acceptCall()">Accept</button>
       <button class="jbtn bad" onclick="declineCall()">Decline</button>
@@ -509,13 +662,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 </div>
 </div>
 
-<!-- PIN ENTRY (for joiners) -->
+<!-- ═══ PIN ENTRY FOR JOINERS ═══ -->
 <div class="overlay" id="joinpin-ov">
 <div class="modal" style="max-width:340px">
   <div class="mbody" style="align-items:center;text-align:center;gap:16px;padding:28px 24px">
     <div style="font-size:36px">🔒</div>
     <div class="mtitle">Enter Session PIN</div>
-    <div style="font-size:12px;color:var(--t2)">Your coach has secured this session with a PIN. Enter it below to join.</div>
+    <div style="font-size:12px;color:var(--t2)">Enter the PIN provided by your coach.</div>
     <div class="pin-row">
       <input class="pdig" id="p0" maxlength="1" type="password" inputmode="numeric"/>
       <input class="pdig" id="p1" maxlength="1" type="password" inputmode="numeric"/>
@@ -534,19 +687,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 <canvas id="bg-canvas" class="hidden"></canvas>
 
 <script>
-// ═══ STATE ═══════════════════════════════════════════════════
+// ═══ STATE ═══════════════════════════════════════════════════════
 let peer=null,localStream=null,outbound=null,currentCall=null;
 let pendingCall=null,pendingRemote=null,dataConn=null;
 let seg=null,canStream=null,pipeOn=false;
-let fx="none",customBG=null,aprof="standard";
-let sPin="",micMuted=false,camOff=false;
-let sharing=false,screenStream=null;
-let activePanel=null,unread=0;
-let timerInt=null,pendingConnId=null;
+let fx="none",customBG=null,aprof="standard",sPin="";
+let micMuted=false,camOff=false,sharing=false,screenStream=null;
+let activePanel=null,unread=0,timerInt=null;
+let myName="",remoteName="",pendingConnId=null;
+let lobbyQueue=[]; // {name, peerId} waiting to be admitted
 
 const G=id=>document.getElementById(id);
 
-// ═══ INIT ════════════════════════════════════════════════════
+// ═══ INIT ════════════════════════════════════════════════════════
 window.addEventListener("load",()=>{
   G("csend").addEventListener("click",sendChat);
   G("cinput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}});
@@ -554,94 +707,192 @@ window.addEventListener("load",()=>{
   ["p0","p1","p2","p3"].forEach((id,i)=>{
     G(id).addEventListener("input",e=>{if(e.target.value&&i<3)G(["p0","p1","p2","p3"][i+1]).focus();});
   });
+  ["lp0","lp1","lp2","lp3"].forEach((id,i)=>{
+    G(id).addEventListener("input",e=>{if(e.target.value&&i<3)G(["lp0","lp1","lp2","lp3"][i+1]).focus();});
+  });
+  G("lobby-name-in").focus();
+  loadURLPrep(); // check URL params before peer is ready
   createPeer();
   initSeg();
-  loadURL();
-  updateMembers();
-  st("Platform ready.");
+  st("Loading…");
 });
 
-// ═══ HELPERS ═════════════════════════════════════════════════
+// ═══ URL PREP — read params before peer opens ════════════════════
+function loadURLPrep(){
+  const p=new URLSearchParams(location.search);
+  const join=p.get("join");
+  const sname=p.get("sname");
+  const pin=p.get("pin");
+
+  if(join){
+    // Auto-fill remote ID in share modal
+    G("remote-id-in").value=join;
+    // Show session name if encoded in URL
+    if(sname){
+      const decoded=decodeURIComponent(sname);
+      G("lobby-session-label").textContent=decoded;
+      G("sname-display").textContent=decoded;
+    }
+    // If PIN required, show PIN fields in lobby
+    if(pin){
+      G("lobby-pin-section").classList.remove("hidden");
+      const d=pin.split("").slice(0,4);
+      ["lp0","lp1","lp2","lp3"].forEach((id,idx)=>{G(id).value=d[idx]||"";});
+    }
+  } else {
+    // Host — skip lobby, go straight in
+    CO("lobby-ov");
+    // Show lobby ID hint
+    G("lobby-id-display").textContent="";
+  }
+}
+
+// ═══ LOBBY — name entry flow ═════════════════════════════════════
+function lobbyJoin(){
+  const name=G("lobby-name-in").value.trim();
+  if(!name){G("lobby-name-in").style.borderColor="var(--red)";G("lobby-name-in").placeholder="Please enter your name";return;}
+  myName=name;
+  G("local-tname").textContent=name;
+
+  const p=new URLSearchParams(location.search);
+  const join=p.get("join");
+
+  if(join){
+    // Joiner — check PIN if required
+    const pin=p.get("pin");
+    if(pin){
+      const entered=["lp0","lp1","lp2","lp3"].map(id=>G(id).value).join("");
+      if(entered!==pin){
+        G("lp0").style.borderColor="var(--red)";
+        G("lp1").style.borderColor="var(--red)";
+        G("lp2").style.borderColor="var(--red)";
+        G("lp3").style.borderColor="var(--red)";
+        st("Incorrect PIN — check with your coach.");
+        return;
+      }
+    }
+    CO("lobby-ov");
+    st("Connecting to session…");
+    // Wait for peer to be ready then connect
+    const wait=setInterval(()=>{
+      if(G("sdot").dataset.id){
+        clearInterval(wait);
+        doConnect(join,pin||"",name);
+      }
+    },200);
+  } else {
+    // Host entering their name
+    CO("lobby-ov");
+    st("Session ready — invite clients via the Invite button.");
+  }
+}
+
+// ═══ HELPERS ═════════════════════════════════════════════════════
 function st(m){G("status-el").textContent=m;}
 function dot(s){G("sdot").className="tb-dot"+(s?" "+s:"");}
 function OV(id){G(id).classList.add("show");}
 function CO(id){G(id).classList.remove("show");}
+
 function openShare(){
-  const id=G("sdot").dataset.id||"";
-  G("sh-id").textContent=id||"Not ready";
-  G("sh-link").textContent=id?`${location.origin}${location.pathname}?join=${id}`:"Not ready";
+  const myId=G("sdot").dataset.id||"";
+  G("sh-id").textContent=myId||"Not ready yet";
+  const sname=encodeURIComponent(G("sname-display").textContent);
+  const pinParam=sPin?`&pin=${sPin}`:"";
+  G("sh-link").textContent=myId
+    ?`${location.origin}${location.pathname}?join=${myId}&sname=${sname}${pinParam}`
+    :"Not ready yet";
   const pr=G("sh-pin-row");
   if(sPin){pr.classList.remove("hidden");G("sh-pin-val").textContent=sPin;}
   else pr.classList.add("hidden");
   OV("share-ov");
 }
+
 function showLocal(v){
   G("local-canvas").style.display=v?"block":"none";
   G("local-empty").style.display=v?"none":"flex";
-  G("local-badge").textContent=v?"LIVE":"OFFLINE";
+  G("local-badge").textContent=v?"LIVE":"OFF";
   G("local-badge").className="tbadge "+(v?"b-live":"b-off");
 }
+
 function showRemote(v){
   G("remote-video").style.display=v?"block":"none";
   G("remote-empty").style.display=v?"none":"flex";
-  G("remote-badge").textContent=v?"CONNECTED":"NO SIGNAL";
+  G("remote-badge").textContent=v?"LIVE":"—";
   G("remote-badge").className="tbadge "+(v?"b-conn":"b-off");
-  if(v){dot("live");}else{dot(localStream?"on":"");}
+  dot(v?"live":localStream?"on":"");
 }
 
-// ═══ TIMER ═══════════════════════════════════════════════════
+// ═══ TIMER ═══════════════════════════════════════════════════════
 function startTimer(){
   if(timerInt)return;
   const t0=Date.now();
   timerInt=setInterval(()=>{
     const s=Math.floor((Date.now()-t0)/1000);
-    G("sess-timer").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+    G("sess-timer").textContent=`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
   },1000);
 }
 function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}G("sess-timer").textContent="00:00";}
 
-// ═══ PEER ════════════════════════════════════════════════════
+// ═══ PEER ════════════════════════════════════════════════════════
 function createPeer(){
   const id="so-"+Math.random().toString(36).slice(2,9);
   peer=new Peer(id,{host:"0.peerjs.com",port:443,secure:true});
+
   peer.on("open",v=>{
     G("sdot").dataset.id=v;dot("on");
-    st("Ready — ID: "+v);updateMembers();
+    st("Ready — "+v);
+    G("lobby-id-display").textContent="Session: "+v;
+    updateMembers();
   });
+
   peer.on("call",inc=>{
     pendingCall=inc;
-    G("caller-display").textContent=inc.peer;
-    const pinWarn=G("pin-warn");
-    if(sPin)pinWarn.classList.remove("hidden"); else pinWarn.classList.add("hidden");
+    const callerName=inc.metadata?.name||inc.peer.slice(0,14);
+    G("caller-display").textContent=callerName;
+    if(sPin&&inc.metadata?.pin!==sPin){G("pin-warn").classList.remove("hidden");}
+    else G("pin-warn").classList.add("hidden");
     OV("incoming-ov");dot("ring");
-    st("Incoming session from "+inc.peer);
+    st("Incoming session from "+callerName);
   });
+
   peer.on("connection",conn=>{
-    dataConn=conn;
-    conn.on("data",rxData);
-    conn.on("open",()=>updateMembers());
-    conn.on("close",()=>{dataConn=null;updateMembers();});
+    // Data channel from joiner — get their name
+    conn.on("open",()=>{
+      conn.send({type:"hello",name:myName});
+    });
+    conn.on("data",d=>{
+      if(d.type==="hello"){
+        // Update remote name in UI
+        remoteName=d.name||"Peer";
+        G("remote-tname").textContent=remoteName;
+        updateMembers();
+        // Send back our name
+        if(myName)conn.send({type:"hello",name:myName});
+      }
+      if(d.type==="chat")appendMsg({text:d.text,from:"them",fromName:remoteName||"Peer",ts:d.ts||Date.now()});
+    });
+    conn.on("close",()=>{dataConn=null;remoteName="";G("remote-tname").textContent="Waiting…";updateMembers();});
+    if(!dataConn)dataConn=conn;
+    updateMembers();
   });
+
   peer.on("error",e=>{console.error(e);st("Peer error: "+(e.type||"?"));dot("");});
 }
 
-// ═══ SEGMENTATION ════════════════════════════════════════════
+// ═══ SEGMENTATION ════════════════════════════════════════════════
 function initSeg(){
   seg=new SelfieSegmentation({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`});
   seg.setOptions({modelSelection:1});
   seg.onResults(onSeg);
 }
 
-// ═══ CAMERA ══════════════════════════════════════════════════
+// ═══ CAMERA ══════════════════════════════════════════════════════
 async function startCamera(){
   try{
     const s=await navigator.mediaDevices.getUserMedia({video:true,audio:aC(aprof)});
-    await applyStream(s);
-    await loadDevs();
-    st("Camera started.");
-    camOff=false;
-    G("btn-cam").classList.remove("muted");
-    G("lbl-cam").textContent="Camera";
+    await applyStream(s);await loadDevs();
+    camOff=false;G("btn-cam").classList.remove("muted");G("lbl-cam").textContent="Camera";
+    st("Camera on.");
   }catch(e){console.error(e);st("Camera error: "+e.message);alert("Camera/mic access denied.");}
 }
 
@@ -649,29 +900,24 @@ async function applyStream(s){
   stopTracks();localStream=s;
   const rv=G("raw-video");rv.srcObject=s;rv.muted=true;
   await rv.play().catch(()=>{});
-  await buildPipe();
-  showLocal(true);updateMembers();updateMicUI();
+  await buildPipe();showLocal(true);updateMembers();updateMicUI();
 }
 
 async function buildPipe(){
   const vt=localStream.getVideoTracks()[0];
-  const ss=vt?.getSettings()||{};
-  const w=ss.width||1280,h=ss.height||720;
+  const ss=vt?.getSettings()||{};const w=ss.width||1280,h=ss.height||720;
   const lc=G("local-canvas"),bc=G("bg-canvas");
   lc.width=w;lc.height=h;bc.width=w;bc.height=h;
   if(canStream)canStream.getTracks().forEach(t=>t.stop());
-  canStream=lc.captureStream(25);
-  rebuildOut();
+  canStream=lc.captureStream(25);rebuildOut();
   if(!pipeOn){pipeOn=true;loop();}
 }
 
 function rebuildOut(){
   if(!canStream)return;
-  const vid=canStream.getVideoTracks()[0];
-  const aud=localStream?.getAudioTracks()[0]||null;
+  const vid=canStream.getVideoTracks()[0],aud=localStream?.getAudioTracks()[0]||null;
   outbound=new MediaStream();
-  if(vid)outbound.addTrack(vid);
-  if(aud)outbound.addTrack(aud);
+  if(vid)outbound.addTrack(vid);if(aud)outbound.addTrack(aud);
   replaceSnd();
 }
 
@@ -696,15 +942,12 @@ function onSeg(r){
   ctx.save();ctx.clearRect(0,0,w,h);
   if(fx==="none"){ctx.drawImage(r.image,0,0,w,h);}
   else if(fx==="blur"){
-    ctx.drawImage(r.segmentationMask,0,0,w,h);
-    ctx.globalCompositeOperation="source-out";ctx.filter="blur(15px)";
-    ctx.drawImage(r.image,0,0,w,h);
-    ctx.globalCompositeOperation="destination-atop";ctx.filter="none";
-    ctx.drawImage(r.image,0,0,w,h);
+    ctx.drawImage(r.segmentationMask,0,0,w,h);ctx.globalCompositeOperation="source-out";
+    ctx.filter="blur(15px)";ctx.drawImage(r.image,0,0,w,h);
+    ctx.globalCompositeOperation="destination-atop";ctx.filter="none";ctx.drawImage(r.image,0,0,w,h);
   }else if(fx==="solid"){
-    ctx.fillStyle="#080c1a";ctx.fillRect(0,0,w,h);
-    ctx.globalCompositeOperation="destination-out";ctx.drawImage(r.segmentationMask,0,0,w,h);
-    ctx.globalCompositeOperation="destination-over";ctx.drawImage(r.image,0,0,w,h);
+    ctx.fillStyle="#080c1a";ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation="destination-out";
+    ctx.drawImage(r.segmentationMask,0,0,w,h);ctx.globalCompositeOperation="destination-over";ctx.drawImage(r.image,0,0,w,h);
   }else if(fx==="image"){
     if(customBG)ctx.drawImage(customBG,0,0,w,h);
     else{ctx.fillStyle="#1e3a8a";ctx.fillRect(0,0,w,h);}
@@ -714,20 +957,20 @@ function onSeg(r){
   ctx.restore();
 }
 
-// ═══ SCREEN SHARE ════════════════════════════════════════════
+// ═══ SCREEN SHARE ════════════════════════════════════════════════
 async function toggleScreen(){
   if(!localStream){st("Start your camera before sharing screen.");return;}
   if(sharing){stopScreen();return;}
   try{
-    screenStream=await navigator.mediaDevices.getDisplayMedia({
-      video:{cursor:"always"},audio:false
-    });
+    screenStream=await navigator.mediaDevices.getDisplayMedia({video:{cursor:"always"},audio:false});
     const sT=screenStream.getVideoTracks()[0];
-    // Show in tile
-    const sp=G("screen-preview");sp.srcObject=screenStream;sp.style.display="block";
-    G("tile-screen").classList.remove("hidden");
-    G("vstage").classList.add("sharing");
-    // Replace sender track
+    // Wire screen video into main-area
+    const sv=G("screen-video");sv.srcObject=screenStream;sv.style.display="block";
+    G("no-share-msg").style.display="none";
+    G("share-label").classList.add("show");
+    // Enter presentation mode: cameras shrink to top strip, screen fills stage
+    G("vstage").classList.add("presenting");
+    // Hot-swap to screen track for remote peer
     if(currentCall?.peerConnection){
       const snd=currentCall.peerConnection.getSenders().find(s=>s.track?.kind==="video");
       if(snd)await snd.replaceTrack(sT);
@@ -736,7 +979,7 @@ async function toggleScreen(){
     G("btn-share").classList.add("sharing");
     G("lbl-share").textContent="Stop Share";
     sT.addEventListener("ended",stopScreen);
-    st("Screen sharing — your screen is visible to the remote peer.");
+    st("Screen sharing active.");
   }catch(e){
     if(e.name!=="NotAllowedError"){console.error(e);st("Screen share error: "+e.message);}
     else st("Screen share cancelled.");
@@ -745,12 +988,12 @@ async function toggleScreen(){
 
 async function stopScreen(){
   if(!sharing)return;
-  screenStream?.getTracks().forEach(t=>t.stop());
-  screenStream=null;
-  const sp=G("screen-preview");sp.srcObject=null;sp.style.display="none";
-  G("tile-screen").classList.add("hidden");
-  G("vstage").classList.remove("sharing");
-  // Restore canvas track
+  screenStream?.getTracks().forEach(t=>t.stop());screenStream=null;
+  const sv=G("screen-video");sv.srcObject=null;sv.style.display="none";
+  G("share-label").classList.remove("show");
+  // Exit presentation mode — cameras expand back to full-size tiles
+  G("vstage").classList.remove("presenting");
+  // Restore canvas camera track for remote peer
   if(currentCall?.peerConnection&&canStream){
     const snd=currentCall.peerConnection.getSenders().find(s=>s.track?.kind==="video");
     if(snd)await snd.replaceTrack(canStream.getVideoTracks()[0]).catch(()=>{});
@@ -761,35 +1004,29 @@ async function stopScreen(){
   st("Screen sharing stopped.");
 }
 
-// ═══ MIC / CAM TOGGLE ════════════════════════════════════════
+// ═══ MIC / CAM ═══════════════════════════════════════════════════
 async function toggleCamera(){
   if(!localStream){await startCamera();return;}
   camOff=!camOff;
   localStream.getVideoTracks().forEach(t=>t.enabled=!camOff);
-  G("btn-cam").classList.toggle("muted",camOff);
-  G("lbl-cam").textContent=camOff?"Start Cam":"Camera";
-  showLocal(!camOff);
-  st(camOff?"Camera paused.":"Camera on.");
+  G("btn-cam").classList.toggle("muted",camOff);G("lbl-cam").textContent=camOff?"Start Cam":"Camera";
+  showLocal(!camOff);st(camOff?"Camera paused.":"Camera on.");
 }
 
 function toggleMic(){
   if(!localStream){st("Start camera first.");return;}
-  const t=localStream.getAudioTracks()[0];
-  if(!t){st("No microphone track.");return;}
+  const t=localStream.getAudioTracks()[0];if(!t){st("No mic track.");return;}
   micMuted=!micMuted;t.enabled=!micMuted;
-  updateMicUI();
-  G("local-mico").classList.toggle("show",micMuted);
+  updateMicUI();G("local-mico").classList.toggle("show",micMuted);
   st(micMuted?"Microphone muted.":"Microphone unmuted.");
 }
 
 function updateMicUI(){
-  const t=localStream?.getAudioTracks()[0];
-  const m=t?!t.enabled:false;
-  G("btn-mic").classList.toggle("muted",m);
-  G("lbl-mic").textContent=m?"Unmute":"Mute";
+  const t=localStream?.getAudioTracks()[0],m=t?!t.enabled:false;
+  G("btn-mic").classList.toggle("muted",m);G("lbl-mic").textContent=m?"Unmute":"Mute";
 }
 
-// ═══ DEVICES ═════════════════════════════════════════════════
+// ═══ DEVICES ═════════════════════════════════════════════════════
 async function loadDevs(){
   const d=await navigator.mediaDevices.enumerateDevices().catch(()=>[]);
   fillS(G("cam-sel"),d.filter(x=>x.kind==="videoinput"),"Camera");
@@ -810,10 +1047,7 @@ function fillS(sel,devs,lbl,addDef=false){
   devs.forEach((d,i)=>sel.add(new Option(d.label||lbl+" "+(i+1),d.deviceId)));
 }
 
-async function refreshDev(){
-  if(!localStream){st("Start camera to detect devices.");return;}
-  await loadDevs();st("Devices refreshed.");
-}
+async function refreshDev(){if(!localStream){st("Start camera first.");return;}await loadDevs();st("Devices refreshed.");}
 
 async function switchCam(){
   if(!localStream){st("Start camera first.");return;}
@@ -827,30 +1061,27 @@ async function switchCam(){
     localStream.getVideoTracks().forEach(t=>{t.stop();localStream.removeTrack(t);});
     localStream.addTrack(nt);
     const rv=G("raw-video");rv.srcObject=null;rv.srcObject=localStream;
-    await rv.play().catch(()=>{});
-    await buildPipe();showLocal(true);
-    st("Camera switched: "+(nt.label||id));
+    await rv.play().catch(()=>{});await buildPipe();showLocal(true);
+    st("Camera: "+(nt.label||id));
   }catch(e){st("Camera switch failed: "+e.message);}
 }
 
 async function switchMic(){
   if(!localStream){st("Start camera first.");return;}
   const id=G("mic-sel").value;if(!id){st("Select a mic.");return;}
-  const prof=G("aprof-sel").value;
-  st("Switching microphone…");
+  st("Switching mic…");
   try{
-    const ns=await navigator.mediaDevices.getUserMedia({video:false,audio:aC(prof,id)});
+    const ns=await navigator.mediaDevices.getUserMedia({video:false,audio:aC(G("aprof-sel").value,id)});
     const nt=ns.getAudioTracks()[0];
     localStream.getAudioTracks().forEach(t=>{t.stop();localStream.removeTrack(t);});
-    localStream.addTrack(nt);
-    rebuildOut();updateMicUI();
-    st("Mic switched: "+(nt.label||id));
+    localStream.addTrack(nt);rebuildOut();updateMicUI();
+    st("Mic: "+(nt.label||id));
   }catch(e){st("Mic switch failed: "+e.message);}
 }
 
 async function applySpeaker(){
   const rv=G("remote-video");
-  if(typeof rv.setSinkId!=="function"){st("Speaker switching not supported in this browser.");return;}
+  if(typeof rv.setSinkId!=="function"){st("Speaker switching not supported here.");return;}
   try{await rv.setSinkId(G("spk-sel").value||"");st("Speaker updated.");}
   catch(e){st("Speaker error: "+e.message);}
 }
@@ -862,11 +1093,10 @@ function aC(p,id=null){
   return{...b,echoCancellation:true,noiseSuppression:true,autoGainControl:true};
 }
 
-// ═══ EFFECTS ═════════════════════════════════════════════════
+// ═══ EFFECTS ═════════════════════════════════════════════════════
 function setFX(m){
   if(m==="image"&&!customBG){G("bg-file").click();return;}
-  fx=m;
-  ["none","blur","solid","image"].forEach(k=>G("eff-"+k).classList.toggle("on",k===m));
+  fx=m;["none","blur","solid","image"].forEach(k=>G("eff-"+k).classList.toggle("on",k===m));
   st("Effect: "+m);
 }
 function handleBG(e){
@@ -877,47 +1107,42 @@ function handleBG(e){
   img.src=url;
 }
 
-// ═══ CALL FLOW ═══════════════════════════════════════════════
+// ═══ CALL FLOW ═══════════════════════════════════════════════════
 function connectToPeer(){
   CO("share-ov");
   const rid=G("remote-id-in").value.trim();
   if(!rid){alert("Enter a remote Session ID.");return;}
-  if(!peer){alert("Not ready yet.");return;}
-  // Check if PIN required (URL param)
-  const urlPin=new URLSearchParams(location.search).get("pin");
-  if(urlPin){
-    pendingConnId=rid;
-    prefPin(urlPin);OV("joinpin-ov");return;
-  }
-  doConnect(rid,"");
-}
-
-function prefPin(pin){
-  const d=pin.split("").slice(0,4);
-  ["p0","p1","p2","p3"].forEach((id,i)=>{G(id).value=d[i]||"";});
+  doConnect(rid,"",myName);
 }
 
 function submitPin(){
   const pin=["p0","p1","p2","p3"].map(id=>G(id).value).join("").trim();
   CO("joinpin-ov");
   if(!pendingConnId)return;
-  doConnect(pendingConnId,pin);
+  doConnect(pendingConnId,pin,myName);
   pendingConnId=null;
 }
 
-function doConnect(rid,pin){
+function doConnect(rid,pin,name){
   if(currentCall){currentCall.close();currentCall=null;}
   st("Connecting to "+rid+"…");dot("ring");
-  // Data channel
+  // Data channel — exchange names
   try{
     const dc=peer.connect(rid);
-    dc.on("open",()=>{dataConn=dc;updateMembers();});
-    dc.on("data",rxData);
-    dc.on("close",()=>{dataConn=null;updateMembers();});
-  }catch(e){console.warn("Data ch:",e);}
-  // Media
+    dc.on("open",()=>{
+      dataConn=dc;
+      dc.send({type:"hello",name:name||myName});
+      updateMembers();
+    });
+    dc.on("data",d=>{
+      if(d.type==="hello"){remoteName=d.name||"Peer";G("remote-tname").textContent=remoteName;updateMembers();}
+      if(d.type==="chat")appendMsg({text:d.text,from:"them",fromName:remoteName||"Peer",ts:d.ts||Date.now()});
+    });
+    dc.on("close",()=>{dataConn=null;remoteName="";G("remote-tname").textContent="Waiting…";updateMembers();});
+  }catch(e){console.warn("DataCh:",e);}
+  // Media call
   try{
-    currentCall=peer.call(rid,outbound||undefined,{metadata:{pin}});
+    currentCall=peer.call(rid,outbound||undefined,{metadata:{pin,name:name||myName}});
     wireCall(currentCall);
   }catch(e){console.error(e);st("Connection failed: "+e.message);dot("on");}
 }
@@ -927,9 +1152,10 @@ function acceptCall(){
   if(currentCall){currentCall.close();currentCall=null;}
   currentCall=pendingCall;pendingCall=null;
   CO("incoming-ov");
+  const callerName=currentCall.metadata?.name||currentCall.peer.slice(0,14);
+  remoteName=callerName;G("remote-tname").textContent=callerName;
   currentCall.answer(outbound||undefined);
-  wireCall(currentCall);
-  st("Session accepted.");
+  wireCall(currentCall);st("Session accepted.");
 }
 
 function declineCall(){
@@ -939,15 +1165,13 @@ function declineCall(){
 
 function wireCall(call){
   call.on("stream",remote=>{
-    pendingRemote=remote;attachRemote(remote);startTimer();
-    G("remote-tname").textContent=call.peer.slice(0,14)+"…";
-    updateMembers();
+    pendingRemote=remote;attachRemote(remote);startTimer();updateMembers();
   });
   call.on("close",()=>{
-    clearRemote();CO("incoming-ov");pendingCall=null;
-    stopTimer();updateMembers();
-    st("Session ended.");if(sharing)stopScreen();
-    dot(localStream?"on":"");
+    clearRemote();CO("incoming-ov");pendingCall=null;stopTimer();
+    remoteName="";G("remote-tname").textContent="Waiting…";
+    updateMembers();st("Session ended.");
+    if(sharing)stopScreen();dot(localStream?"on":"");
   });
   call.on("error",e=>{console.error(e);st("Call error: "+e.type);});
 }
@@ -955,16 +1179,15 @@ function wireCall(call){
 function attachRemote(stream){
   const rv=G("remote-video");rv.srcObject=stream;rv.playsInline=true;rv.muted=false;
   showRemote(true);
+  const pp=G("tap-play");
   const p=rv.play();
-  if(p?.then)p.then(()=>{G("tap-play").style.display="none";st("Remote feed connected.")})
-    .catch(()=>{G("tap-play").style.display="block";st("Tap to start playback.");});
-  G("tap-play").onclick=()=>{rv.play().then(()=>{G("tap-play").style.display="none";});};
+  if(p?.then)p.then(()=>{pp.style.display="none";st("Remote feed connected.");})
+    .catch(()=>{pp.style.display="block";st("Tap to start playback.");});
+  pp.onclick=()=>{rv.play().then(()=>{pp.style.display="none";});};
 }
 
 function clearRemote(){
-  G("remote-video").srcObject=null;pendingRemote=null;
-  showRemote(false);G("tap-play").style.display="none";
-  G("remote-tname").textContent="Remote Peer";
+  G("remote-video").srcObject=null;pendingRemote=null;showRemote(false);G("tap-play").style.display="none";
 }
 
 function hangUp(){
@@ -972,25 +1195,17 @@ function hangUp(){
   if(currentCall){currentCall.close();currentCall=null;}
   if(dataConn){dataConn.close();dataConn=null;}
   if(sharing)stopScreen();
-  CO("incoming-ov");clearRemote();stopTimer();updateMembers();
-  dot(localStream?"on":"");st("Session ended.");
+  CO("incoming-ov");clearRemote();stopTimer();
+  remoteName="";G("remote-tname").textContent="Waiting…";
+  updateMembers();dot(localStream?"on":"");st("Session ended.");
 }
 
-// ═══ CHAT ════════════════════════════════════════════════════
+// ═══ CHAT ════════════════════════════════════════════════════════
 function sendChat(){
   const inp=G("cinput"),text=inp.value.trim();if(!text)return;
   if(dataConn?.open)dataConn.send({type:"chat",text,from:"me",ts:Date.now()});
-  appendMsg({text,from:"me",ts:Date.now()});
+  appendMsg({text,from:"me",fromName:myName||"You",ts:Date.now()});
   inp.value="";
-}
-
-function rxData(d){
-  if(!d||d.type!=="chat")return;
-  appendMsg({text:d.text,from:"them",ts:d.ts||Date.now()});
-  if(activePanel!=="chat"){
-    unread++;
-    const b=G("chat-badge");b.textContent=unread;b.classList.add("on");
-  }
 }
 
 function appendMsg(msg){
@@ -999,13 +1214,16 @@ function appendMsg(msg){
   const d=document.createElement("div");
   d.className="cmsg "+(msg.from==="me"?"me":"them");
   const t=new Date(msg.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
-  d.innerHTML=`<div class="cbubble">${esc(msg.text)}</div><div class="cmeta">${t}</div>`;
+  d.innerHTML=`<div class="cbubble">${esc(msg.text)}</div><div class="cmeta">${esc(msg.fromName)} · ${t}</div>`;
   w.appendChild(d);w.scrollTop=w.scrollHeight;
+  if(activePanel!=="chat"&&msg.from!=="me"){
+    unread++;const b=G("chat-badge");b.textContent=unread;b.classList.add("on");
+  }
 }
 
-function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
-// ═══ PANELS ══════════════════════════════════════════════════
+// ═══ PANELS ══════════════════════════════════════════════════════
 function togglePanel(name){
   if(activePanel===name){closePanel();return;}
   activePanel=name;
@@ -1020,25 +1238,26 @@ function togglePanel(name){
 }
 
 function closePanel(){
-  activePanel=null;
-  G("spanel").classList.remove("open");
-  G("btn-chat").classList.remove("active");
-  G("btn-members").classList.remove("active");
+  activePanel=null;G("spanel").classList.remove("open");
+  G("btn-chat").classList.remove("active");G("btn-members").classList.remove("active");
 }
 
 function updateMembers(){
-  const myId=G("sdot").dataset.id||"Connecting…";
+  const myId=G("sdot").dataset.id||"—";
   const rmId=currentCall?.peer||null;
   G("members-badge").textContent=1+(rmId?1:0);
   const mic=localStream?.getAudioTracks()[0]?.enabled!==false;
-  const cam=!!localStream&&localStream.getVideoTracks()[0]?.enabled!==false;
-  G("mlist").innerHTML=mCard(myId,"You",mic,cam)+( rmId?mCard(rmId,"Peer",true,true):"");
+  const cam=!!localStream&&!camOff;
+  let html=mCard(myId,myName||"You (Host)",mic,cam);
+  if(rmId)html+=mCard(rmId,remoteName||"Peer",true,true);
+  G("mlist").innerHTML=html;
 }
 
-function mCard(id,lbl,mic,cam){
+function mCard(id,name,mic,cam){
+  const init=name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   return`<div class="mcard">
-    <div class="mavatar">${lbl.slice(0,2).toUpperCase()}</div>
-    <div class="minfo"><div class="mname">${lbl}</div><div class="mid">${id.slice(0,22)}</div></div>
+    <div class="mavatar">${init}</div>
+    <div class="minfo"><div class="mname">${esc(name)}</div><div class="mid">${id.slice(0,22)}</div></div>
     <div class="micons">
       <div class="mi${mic?"":" off"}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg></div>
       <div class="mi${cam?"":" off"}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
@@ -1046,54 +1265,29 @@ function mCard(id,lbl,mic,cam){
   </div>`;
 }
 
-// ═══ SESSION NAME & PIN ══════════════════════════════════════
+// ═══ SESSION SETTINGS ════════════════════════════════════════════
 function applyName(){
-  const n=G("sname-in").value.trim();
-  if(n)G("sname-display").textContent=n;
-  st("Session name updated.");
+  const n=G("sname-in").value.trim();if(n){G("sname-display").textContent=n;}st("Session name updated.");
 }
-
 function applyPin(){
-  const p=G("pin-in").value.trim();
-  if(!/^\d{4,6}$/.test(p)){st("PIN must be 4–6 digits.");return;}
-  sPin=p;
-  G("pdot").classList.add("on");
-  G("pstatus").textContent="PIN set — clients must enter this PIN to join";
-  G("pin-badge").classList.remove("hidden");
-  st("Session PIN set.");
+  const p=G("pin-in").value.trim();if(!/^\d{4,6}$/.test(p)){st("PIN must be 4–6 digits.");return;}
+  sPin=p;G("pdot").classList.add("on");
+  G("pstatus").textContent="PIN set — clients must enter this to join";
+  G("pin-badge").classList.remove("hidden");st("PIN set.");
 }
-
 function clearPin(){
   sPin="";G("pdot").classList.remove("on");
   G("pstatus").textContent="No PIN — anyone with your link can join";
-  G("pin-in").value="";G("pin-badge").classList.add("hidden");
-  st("PIN cleared.");
+  G("pin-in").value="";G("pin-badge").classList.add("hidden");st("PIN cleared.");
 }
 
-// ═══ UTILS ═══════════════════════════════════════════════════
-async function cpText(elId){
-  const t=G(elId).textContent;
-  try{await navigator.clipboard.writeText(t);st("Copied to clipboard.");}
+// ═══ UTILS ═══════════════════════════════════════════════════════
+async function cpEl(id){
+  const t=G(id).textContent;
+  try{await navigator.clipboard.writeText(t);st("Copied.");}
   catch{prompt("Copy:",t);}
 }
-
 function stopTracks(){if(localStream)localStream.getTracks().forEach(t=>t.stop());}
-
-function loadURL(){
-  const p=new URLSearchParams(location.search);
-  const join=p.get("join");
-  if(join){
-    G("remote-id-in").value=join;
-    const pin=p.get("pin");
-    if(pin){
-      pendingConnId=join;prefPin(pin);
-      const wait=setInterval(()=>{
-        if(G("sdot").dataset.id){clearInterval(wait);OV("joinpin-ov");}
-      },300);
-    }
-    setTimeout(()=>OV("share-ov"),800);
-  }
-}
 </script>
 </body>
 </html>
