@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Strive-Ops | Phase 1 Transmission Test</title>
+  <title>Strive-Ops | Milestone A</title>
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     * {
@@ -209,7 +209,7 @@
   <div class="app">
     <div class="header">
       <div class="title">Strive-Ops</div>
-      <div class="subtitle">Phase 1 — Transmission test for the Strive-Ops Ecosystem</div>
+      <div class="subtitle">Milestone A — Routing and audio controls</div>
     </div>
 
     <div class="card">
@@ -236,6 +236,22 @@
           <option value="">Select Microphone</option>
         </select>
         <button id="apply-devices-btn" class="btn-blue">Apply Devices</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="controls">
+        <select id="speaker-select">
+          <option value="">Select Speaker / Output</option>
+        </select>
+        <button id="apply-speaker-btn" class="btn-blue">Apply Speaker</button>
+
+        <select id="audio-profile-select">
+          <option value="standard">Audio Profile: Standard</option>
+          <option value="voice">Audio Profile: Voice Focus</option>
+          <option value="raw">Audio Profile: Raw Audio</option>
+        </select>
+        <button id="apply-audio-profile-btn" class="btn-blue">Apply Audio Profile</button>
       </div>
     </div>
 
@@ -277,6 +293,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
