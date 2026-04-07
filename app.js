@@ -1,50 +1,54 @@
 let peer = null;
 let localStream = null;
 let currentCall = null;
-let savedRemoteStream = null;
+let pendingRemoteStream = null;
 
 const myIdEl = document.getElementById("my-id");
-const peerIdInput = document.getElementById("peer-id-input");
+const remoteIdInput = document.getElementById("remote-id-input");
 const statusEl = document.getElementById("status");
 
 const localVideo = document.getElementById("local-video");
 const remoteVideo = document.getElementById("remote-video");
 
-const localEmpty = document.getElementById("local-empty");
-const remoteEmpty = document.getElementById("remote-empty");
+const localPlaceholder = document.getElementById("local-placeholder");
+const remotePlaceholder = document.getElementById("remote-placeholder");
 
 const startCameraBtn = document.getElementById("start-camera-btn");
-const joinCallBtn = document.getElementById("join-call-btn");
-const endCallBtn = document.getElementById("end-call-btn");
 const copyIdBtn = document.getElementById("copy-id-btn");
-const tapToPlayBtn = document.getElementById("tap-to-play");
+const callBtn = document.getElementById("call-btn");
+const hangupBtn = document.getElementById("hangup-btn");
+const tapPlayBtn = document.getElementById("tap-play-btn");
 
 window.addEventListener("load", () => {
   createPeer();
   bindEvents();
-  loadJoinIdFromUrl();
+  preloadJoinId();
 });
 
 function bindEvents() {
   startCameraBtn.addEventListener("click", startCamera);
-  joinCallBtn.addEventListener("click", joinSession);
-  endCallBtn.addEventListener("click", endCall);
   copyIdBtn.addEventListener("click", copyMyId);
-  tapToPlayBtn.addEventListener("click", forcePlayRemote);
+  callBtn.addEventListener("click", startCall);
+  hangupBtn.addEventListener("click", hangUp);
+  tapPlayBtn.addEventListener("click", forcePlayRemote);
 }
 
-function setStatus(text) {
-  statusEl.textContent = text;
+function setStatus(message) {
+  statusEl.textContent = message;
 }
 
-function showLocalPreview(show) {
+function showLocalVideo(show) {
   localVideo.style.display = show ? "block" : "none";
-  localEmpty.style.display = show ? "none" : "flex";
+  localPlaceholder.style.display = show ? "none" : "flex";
 }
 
-function showRemotePreview(show) {
+function showRemoteVideo(show) {
   remoteVideo.style.display = show ? "block" : "none";
-  remoteEmpty.style.display = show ? "none" : "flex";
+  remotePlaceholder.style.display = show ? "none" : "flex";
+}
+
+function showTapPlay(show) {
+  tapPlayBtn.style.display = show ? "block" : "none";
 }
 
 function createPeer() {
@@ -58,10 +62,12 @@ function createPeer() {
 
   peer.on("open", (idValue) => {
     myIdEl.textContent = idValue;
-    setStatus("Connected. You can now share your ID or join another session.");
+    setStatus("Connected to signaling server. This browser is ready.");
   });
 
   peer.on("call", (incomingCall) => {
+    console.log("Incoming call from:", incomingCall.peer);
+
     if (currentCall) {
       currentCall.close();
       currentCall = null;
@@ -69,13 +75,14 @@ function createPeer() {
 
     currentCall = incomingCall;
 
-    // Answer with local stream if available, otherwise answer as receive-only.
+    // If this browser started camera, answer with video/audio.
+    // If not, answer receive-only.
     if (localStream) {
       incomingCall.answer(localStream);
-      setStatus("Incoming session connected. Sending your camera and receiving remote video.");
+      setStatus("Incoming call answered with local camera.");
     } else {
       incomingCall.answer();
-      setStatus("Incoming session connected in receive-only mode.");
+      setStatus("Incoming call answered without local camera.");
     }
 
     attachCallEvents(incomingCall);
@@ -102,10 +109,11 @@ async function startCamera() {
     localVideo.srcObject = localStream;
     localVideo.muted = true;
     localVideo.playsInline = true;
+
     await localVideo.play();
 
-    showLocalPreview(true);
-    setStatus("Camera started. You can now receive viewers or join another device.");
+    showLocalVideo(true);
+    setStatus("Camera started. This browser can now transmit video.");
   } catch (err) {
     console.error("Camera error:", err);
     setStatus("Could not start camera.");
@@ -113,11 +121,16 @@ async function startCamera() {
   }
 }
 
-function joinSession() {
-  const targetId = peerIdInput.value.trim();
+function startCall() {
+  const remoteId = remoteIdInput.value.trim();
 
-  if (!targetId) {
-    alert("Paste an ID first.");
+  if (!remoteId) {
+    alert("Paste a remote ID first.");
+    return;
+  }
+
+  if (!peer) {
+    alert("Peer is not ready yet.");
     return;
   }
 
@@ -126,25 +139,29 @@ function joinSession() {
     currentCall = null;
   }
 
-  setStatus("Joining session...");
+  setStatus("Calling remote browser...");
 
-  // If local camera exists, send it too. Otherwise join receive-only.
-  currentCall = localStream
-    ? peer.call(targetId, localStream)
-    : peer.call(targetId);
+  // If camera is active, send it. Otherwise call receive-only.
+  if (localStream) {
+    currentCall = peer.call(remoteId, localStream);
+  } else {
+    currentCall = peer.call(remoteId);
+  }
 
   attachCallEvents(currentCall);
 }
 
 function attachCallEvents(call) {
   call.on("stream", (remoteStream) => {
-    savedRemoteStream = remoteStream;
+    console.log("Remote stream received");
+    pendingRemoteStream = remoteStream;
     attachRemoteStream(remoteStream);
   });
 
   call.on("close", () => {
-    clearRemoteStream();
-    setStatus("Session ended.");
+    console.log("Call closed");
+    clearRemote();
+    setStatus("Call ended.");
   });
 
   call.on("error", (err) => {
@@ -157,20 +174,20 @@ function attachRemoteStream(stream) {
   remoteVideo.srcObject = stream;
   remoteVideo.playsInline = true;
 
-  showRemotePreview(true);
+  showRemoteVideo(true);
 
   const playPromise = remoteVideo.play();
 
   if (playPromise && typeof playPromise.then === "function") {
     playPromise
       .then(() => {
-        tapToPlayBtn.style.display = "none";
+        showTapPlay(false);
         setStatus("Remote video connected.");
       })
       .catch((err) => {
         console.error("Autoplay blocked:", err);
-        tapToPlayBtn.style.display = "block";
-        setStatus("Remote stream received. Tap the button below to start playback.");
+        showTapPlay(true);
+        setStatus("Remote stream received. Tap the button to start playback.");
       });
   } else {
     setStatus("Remote video connected.");
@@ -178,39 +195,41 @@ function attachRemoteStream(stream) {
 }
 
 function forcePlayRemote() {
-  if (savedRemoteStream && !remoteVideo.srcObject) {
-    remoteVideo.srcObject = savedRemoteStream;
+  if (pendingRemoteStream && !remoteVideo.srcObject) {
+    remoteVideo.srcObject = pendingRemoteStream;
   }
 
   remoteVideo.play()
     .then(() => {
-      tapToPlayBtn.style.display = "none";
+      showTapPlay(false);
       setStatus("Remote video connected.");
     })
     .catch((err) => {
-      console.error("Manual play failed:", err);
+      console.error("Manual remote playback failed:", err);
       setStatus("Tap again to start remote playback.");
     });
 }
 
-function clearRemoteStream() {
+function clearRemote() {
   remoteVideo.srcObject = null;
-  savedRemoteStream = null;
-  showRemotePreview(false);
-  tapToPlayBtn.style.display = "none";
+  pendingRemoteStream = null;
+  showRemoteVideo(false);
+  showTapPlay(false);
 }
 
-function endCall() {
+function hangUp() {
   if (currentCall) {
     currentCall.close();
     currentCall = null;
   }
-  clearRemoteStream();
+
+  clearRemote();
   setStatus("Ready.");
 }
 
 async function copyMyId() {
   const myId = myIdEl.textContent;
+
   if (!myId || myId === "Connecting...") return;
 
   try {
@@ -222,10 +241,10 @@ async function copyMyId() {
   }
 }
 
-function loadJoinIdFromUrl() {
+function preloadJoinId() {
   const params = new URLSearchParams(window.location.search);
-  const join = params.get("join");
-  if (join) {
-    peerIdInput.value = join;
+  const joinId = params.get("join");
+  if (joinId) {
+    remoteIdInput.value = joinId;
   }
 }
