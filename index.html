@@ -8,114 +8,195 @@
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
   <style>
+    :root {
+      --bg: #020617;
+      --card: #0f172a;
+      --line: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --red: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      background: #020617;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
       margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
 
-    h2 {
-      margin-top: 0;
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
-    .controls {
-      margin: 20px 0;
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .grow {
+      flex: 1 1 240px;
     }
 
     input {
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      margin: 5px;
-      width: 220px;
-      max-width: 90%;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #020617;
+      color: var(--text);
     }
 
     button {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      background: #2563eb;
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 10px;
       color: white;
       cursor: pointer;
-      margin: 5px;
+      font-weight: 700;
     }
 
-    button:hover {
-      background: #1d4ed8;
+    .btn-blue { background: var(--blue); }
+    .btn-green { background: var(--green); }
+    .btn-red { background: var(--red); }
+    .btn-dark { background: #334155; }
+
+    .id-box {
+      font-weight: 700;
+      color: #60a5fa;
+      word-break: break-all;
     }
 
-    .video-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    .videos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 16px;
-      flex-wrap: wrap;
-      margin-top: 20px;
     }
 
     .video-card {
-      width: 45%;
-      min-width: 280px;
-      max-width: 520px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
     }
 
-    .video-label {
-      font-size: 14px;
+    .video-title {
+      font-size: 13px;
+      color: var(--muted);
       margin-bottom: 8px;
-      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
     video {
       width: 100%;
       background: black;
       border-radius: 12px;
+      min-height: 240px;
+      object-fit: cover;
     }
 
     #local-video {
       transform: scaleX(-1);
     }
 
+    .placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+      border-radius: 12px;
+      background: #000;
+      color: var(--muted);
+      text-align: center;
+      padding: 20px;
+    }
+
     #status {
-      margin-top: 15px;
+      color: var(--muted);
       font-size: 14px;
-      opacity: 0.85;
+    }
+
+    @media (max-width: 800px) {
+      .videos {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <h1>Strive-Ops Coaching</h1>
+    <div class="sub">Desktop can broadcast. Mobile can join as viewer.</div>
 
-  <h2>Strive-Ops Coaching</h2>
-
-  <p>Your ID:</p>
-  <b id="my-id">Connecting...</b>
-
-  <div class="controls">
-    <button id="join-btn">Enable Camera & Mic</button>
-  </div>
-
-  <div class="controls">
-    <input id="remote-id" placeholder="Enter remote ID">
-    <button onclick="startCall()">Connect</button>
-  </div>
-
-  <div id="status">Waiting to enable camera and microphone...</div>
-
-  <div class="video-wrap">
-    <div class="video-card">
-      <div class="video-label">You</div>
-      <video id="local-video" autoplay muted playsinline></video>
+    <div class="panel">
+      <div style="margin-bottom:8px;">Your ID</div>
+      <div id="my-id" class="id-box">Connecting...</div>
     </div>
 
-    <div class="video-card">
-      <div class="video-label">Remote</div>
-      <video id="remote-video" autoplay playsinline></video>
+    <div class="panel">
+      <div class="row">
+        <div class="grow">
+          <input id="remote-id" placeholder="Enter remote ID" />
+        </div>
+        <button id="enable-media-btn" class="btn-green">Enable Camera & Mic</button>
+        <button id="viewer-btn" class="btn-dark">Join as Viewer</button>
+        <button id="connect-btn" class="btn-blue">Connect</button>
+        <button id="hangup-btn" class="btn-red">Hang Up</button>
+      </div>
+      <div style="margin-top: 12px;">
+        <button id="copy-link-btn" class="btn-dark">Copy Invite Link</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div id="status">Ready.</div>
+    </div>
+
+    <div class="videos">
+      <div class="video-card">
+        <div class="video-title">My Preview</div>
+        <video id="local-video" autoplay muted playsinline style="display:none;"></video>
+        <div id="local-placeholder" class="placeholder">
+          Camera is off on this device.
+        </div>
+      </div>
+
+      <div class="video-card">
+        <div class="video-title">Remote Preview</div>
+        <video id="remote-video" autoplay playsinline style="display:none;"></video>
+        <div id="remote-placeholder" class="placeholder">
+          Waiting for remote stream.
+        </div>
+      </div>
     </div>
   </div>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
