@@ -3,6 +3,7 @@ let localStream = null;
 let currentCall = null;
 let pendingIncomingCall = null;
 let pendingRemoteStream = null;
+let currentAudioProfile = "standard";
 
 const myIdEl = document.getElementById("my-id");
 const remoteIdInput = document.getElementById("remote-id-input");
@@ -29,6 +30,12 @@ const cameraSelect = document.getElementById("camera-select");
 const micSelect = document.getElementById("mic-select");
 const applyDevicesBtn = document.getElementById("apply-devices-btn");
 
+const speakerSelect = document.getElementById("speaker-select");
+const applySpeakerBtn = document.getElementById("apply-speaker-btn");
+
+const audioProfileSelect = document.getElementById("audio-profile-select");
+const applyAudioProfileBtn = document.getElementById("apply-audio-profile-btn");
+
 const muteMicBtn = document.getElementById("mute-mic-btn");
 const muteRemoteBtn = document.getElementById("mute-remote-btn");
 
@@ -50,6 +57,8 @@ function bindEvents() {
   declineCallBtn.addEventListener("click", declineIncomingCall);
 
   applyDevicesBtn.addEventListener("click", applySelectedDevices);
+  applySpeakerBtn.addEventListener("click", applySelectedSpeaker);
+  applyAudioProfileBtn.addEventListener("click", applyAudioProfile);
 
   muteMicBtn.addEventListener("click", toggleMicMute);
   muteRemoteBtn.addEventListener("click", toggleRemoteMute);
@@ -75,6 +84,35 @@ function showTapPlay(show) {
 
 function showIncomingModal(show) {
   incomingCallModal.style.display = show ? "flex" : "none";
+}
+
+function getAudioConstraints(profileName, deviceId = null) {
+  const base = deviceId ? { deviceId: { exact: deviceId } } : {};
+
+  if (profileName === "voice") {
+    return {
+      ...base,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    };
+  }
+
+  if (profileName === "raw") {
+    return {
+      ...base,
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false
+    };
+  }
+
+  return {
+    ...base,
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true
+  };
 }
 
 function createPeer() {
@@ -109,11 +147,7 @@ async function startCamera() {
   try {
     await startMediaWithConstraints({
       video: true,
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
+      audio: getAudioConstraints(currentAudioProfile)
     });
 
     await loadDevices();
@@ -147,9 +181,11 @@ async function loadDevices() {
 
   const cameras = devices.filter(d => d.kind === "videoinput");
   const mics = devices.filter(d => d.kind === "audioinput");
+  const speakers = devices.filter(d => d.kind === "audiooutput");
 
   cameraSelect.innerHTML = "";
   micSelect.innerHTML = "";
+  speakerSelect.innerHTML = "";
 
   if (!cameras.length) {
     const opt = document.createElement("option");
@@ -179,6 +215,20 @@ async function loadDevices() {
     });
   }
 
+  if (!speakers.length) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "Default Speaker";
+    speakerSelect.appendChild(opt);
+  } else {
+    speakers.forEach((device, index) => {
+      const option = document.createElement("option");
+      option.value = device.deviceId;
+      option.textContent = device.label || `Speaker ${index + 1}`;
+      speakerSelect.appendChild(option);
+    });
+  }
+
   if (localStream) {
     const currentVideoTrack = localStream.getVideoTracks()[0];
     const currentAudioTrack = localStream.getAudioTracks()[0];
@@ -197,6 +247,8 @@ async function loadDevices() {
       }
     }
   }
+
+  updateRemoteMuteButton();
 }
 
 async function applySelectedDevices() {
@@ -208,18 +260,7 @@ async function applySelectedDevices() {
       video: selectedCameraId
         ? { deviceId: { exact: selectedCameraId } }
         : true,
-      audio: selectedMicId
-        ? {
-            deviceId: { exact: selectedMicId },
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
-        : {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
+      audio: getAudioConstraints(currentAudioProfile, selectedMicId || null)
     });
 
     const newVideoTrack = newStream.getVideoTracks()[0];
@@ -256,6 +297,81 @@ async function applySelectedDevices() {
     console.error("Apply devices error:", err);
     setStatus("Could not switch devices.");
     alert("Could not switch camera/microphone.");
+  }
+}
+
+async function applySelectedSpeaker() {
+  try {
+    const speakerId = speakerSelect.value;
+
+    if (typeof remoteVideo.setSinkId !== "function") {
+      setStatus("Speaker switching is not supported in this browser.");
+      return;
+    }
+
+    await remoteVideo.setSinkId(speakerId || "");
+    setStatus("Speaker output updated.");
+  } catch (err) {
+    console.error("Apply speaker error:", err);
+    setStatus("Could not switch speaker output.");
+  }
+}
+
+async function applyAudioProfile() {
+  try {
+    const selectedProfile = audioProfileSelect.value;
+    currentAudioProfile = selectedProfile;
+
+    if (!localStream) {
+      setStatus("Audio profile saved. Start camera to apply it.");
+      return;
+    }
+
+    const selectedCameraId = cameraSelect.value;
+    const selectedMicId = micSelect.value;
+
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: selectedCameraId
+        ? { deviceId: { exact: selectedCameraId } }
+        : true,
+      audio: getAudioConstraints(currentAudioProfile, selectedMicId || null)
+    });
+
+    const newVideoTrack = newStream.getVideoTracks()[0];
+    const newAudioTrack = newStream.getAudioTracks()[0];
+
+    if (currentCall && currentCall.peerConnection) {
+      const senders = currentCall.peerConnection.getSenders();
+
+      const videoSender = senders.find(sender => sender.track && sender.track.kind === "video");
+      const audioSender = senders.find(sender => sender.track && sender.track.kind === "audio");
+
+      if (videoSender && newVideoTrack) {
+        await videoSender.replaceTrack(newVideoTrack);
+      }
+
+      if (audioSender && newAudioTrack) {
+        await audioSender.replaceTrack(newAudioTrack);
+      }
+    }
+
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+
+    localStream = newStream;
+    localVideo.srcObject = localStream;
+    localVideo.muted = true;
+    await localVideo.play();
+
+    showLocalVideo(true);
+    updateMuteButtons();
+    await loadDevices();
+
+    setStatus("Audio profile updated.");
+  } catch (err) {
+    console.error("Audio profile error:", err);
+    setStatus("Could not apply audio profile.");
   }
 }
 
