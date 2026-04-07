@@ -26,9 +26,10 @@ const acceptCallBtn = document.getElementById("accept-call-btn");
 const declineCallBtn = document.getElementById("decline-call-btn");
 
 window.addEventListener("load", () => {
-  createPeer();
   bindEvents();
+  createPeer();
   preloadJoinId();
+  debugStatus("Page loaded. Waiting for peer connection...");
 });
 
 function bindEvents() {
@@ -37,12 +38,16 @@ function bindEvents() {
   connectBtn.addEventListener("click", startConnectionRequest);
   hangupBtn.addEventListener("click", hangUp);
   tapPlayBtn.addEventListener("click", forcePlayRemote);
-
   acceptCallBtn.addEventListener("click", acceptIncomingCall);
   declineCallBtn.addEventListener("click", declineIncomingCall);
 }
 
 function setStatus(message) {
+  statusEl.textContent = message;
+}
+
+function debugStatus(message) {
+  console.log(message);
   statusEl.textContent = message;
 }
 
@@ -75,22 +80,20 @@ function createPeer() {
 
   peer.on("open", (idValue) => {
     myIdEl.textContent = idValue;
-    setStatus("Connected to signaling server. This browser is ready.");
+    debugStatus("Peer ready. ID assigned: " + idValue);
   });
 
   peer.on("call", (incomingCall) => {
     console.log("Incoming connection request from:", incomingCall.peer);
-
     pendingIncomingCall = incomingCall;
     callerIdEl.textContent = incomingCall.peer;
     showIncomingModal(true);
-
-    setStatus("Incoming connection request awaiting approval.");
+    debugStatus("Incoming request received from " + incomingCall.peer);
   });
 
   peer.on("error", (err) => {
     console.error("Peer error:", err);
-    setStatus("Peer error: " + (err.type || "unknown"));
+    debugStatus("Peer error: " + (err.type || "unknown"));
   });
 }
 
@@ -113,10 +116,10 @@ async function startCamera() {
     await localVideo.play();
 
     showLocalVideo(true);
-    setStatus("Camera started. This browser can now transmit video if a session is accepted.");
+    debugStatus("Camera started successfully.");
   } catch (err) {
     console.error("Camera error:", err);
-    setStatus("Could not start camera.");
+    debugStatus("Could not start camera.");
     alert("Could not access camera and microphone.");
   }
 }
@@ -139,15 +142,24 @@ function startConnectionRequest() {
     currentCall = null;
   }
 
-  setStatus("Sending connection request...");
+  debugStatus("Sending connection request to " + remoteId + "...");
 
-  if (localStream) {
-    currentCall = peer.call(remoteId, localStream);
-  } else {
-    currentCall = peer.call(remoteId);
+  try {
+    if (localStream) {
+      currentCall = peer.call(remoteId, localStream, {
+        metadata: { wantsConnection: true }
+      });
+    } else {
+      currentCall = peer.call(remoteId, undefined, {
+        metadata: { wantsConnection: true }
+      });
+    }
+
+    attachCallEvents(currentCall);
+  } catch (err) {
+    console.error("Connection request error:", err);
+    debugStatus("Failed to send connection request.");
   }
-
-  attachCallEvents(currentCall);
 }
 
 function acceptIncomingCall() {
@@ -165,10 +177,10 @@ function acceptIncomingCall() {
 
   if (localStream) {
     currentCall.answer(localStream);
-    setStatus("Connection accepted. Sending local camera.");
+    debugStatus("Connection accepted with local camera.");
   } else {
     currentCall.answer();
-    setStatus("Connection accepted without local camera.");
+    debugStatus("Connection accepted without local camera.");
   }
 
   attachCallEvents(currentCall);
@@ -181,10 +193,12 @@ function declineIncomingCall() {
   }
 
   showIncomingModal(false);
-  setStatus("Connection request declined.");
+  debugStatus("Connection request declined.");
 }
 
 function attachCallEvents(call) {
+  if (!call) return;
+
   call.on("stream", (remoteStream) => {
     console.log("Remote stream received");
     pendingRemoteStream = remoteStream;
@@ -196,12 +210,12 @@ function attachCallEvents(call) {
     clearRemote();
     showIncomingModal(false);
     pendingIncomingCall = null;
-    setStatus("Connection ended.");
+    debugStatus("Connection ended.");
   });
 
   call.on("error", (err) => {
     console.error("Call error:", err);
-    setStatus("Call error.");
+    debugStatus("Call error.");
   });
 }
 
@@ -217,15 +231,15 @@ function attachRemoteStream(stream) {
     playPromise
       .then(() => {
         showTapPlay(false);
-        setStatus("Remote video connected.");
+        debugStatus("Remote video connected.");
       })
       .catch((err) => {
         console.error("Autoplay blocked:", err);
         showTapPlay(true);
-        setStatus("Remote stream received. Tap the button to start playback.");
+        debugStatus("Remote stream received. Tap the button to start playback.");
       });
   } else {
-    setStatus("Remote video connected.");
+    debugStatus("Remote video connected.");
   }
 }
 
@@ -237,11 +251,11 @@ function forcePlayRemote() {
   remoteVideo.play()
     .then(() => {
       showTapPlay(false);
-      setStatus("Remote video connected.");
+      debugStatus("Remote video connected.");
     })
     .catch((err) => {
       console.error("Manual remote playback failed:", err);
-      setStatus("Tap again to start remote playback.");
+      debugStatus("Tap again to start remote playback.");
     });
 }
 
@@ -265,7 +279,7 @@ function hangUp() {
 
   showIncomingModal(false);
   clearRemote();
-  setStatus("Ready.");
+  debugStatus("Ready.");
 }
 
 async function copyMyId() {
@@ -275,7 +289,7 @@ async function copyMyId() {
 
   try {
     await navigator.clipboard.writeText(myId);
-    setStatus("Your ID was copied.");
+    debugStatus("Your ID was copied.");
   } catch (err) {
     console.error("Clipboard error:", err);
     prompt("Copy this ID:", myId);
