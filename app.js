@@ -1,98 +1,165 @@
 /* ============================================================
-   STRIVE-OPS | CLEAN 1-ON-1 VIDEO SYSTEM
+   STRIVE-OPS | MOBILE-SAFE 1-ON-1 VIDEO SYSTEM
    ============================================================ */
 
 let peer;
-let localStream;
+let localStream = null;
 let currentCall = null;
 
-// START
-window.onload = async () => {
+window.onload = () => {
+  setupPeer();
+
+  const joinBtn = document.getElementById("join-btn");
+  joinBtn.addEventListener("click", async () => {
     await setupCamera();
-    setupPeer();
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const joinId = params.get("join");
+  if (joinId) {
+    document.getElementById("remote-id").value = joinId;
+  }
 };
 
-// CAMERA
+function setStatus(message) {
+  const status = document.getElementById("status");
+  if (status) status.innerText = message;
+}
+
 async function setupCamera() {
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        });
+  try {
+    setStatus("Requesting camera and microphone access...");
 
-        const video = document.getElementById("local-video");
-        video.srcObject = localStream;
-        await video.play();
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
 
-        console.log("Camera ready");
+    const localVideo = document.getElementById("local-video");
+    localVideo.srcObject = localStream;
+    await localVideo.play();
 
-    } catch (err) {
-        alert("Camera access required");
-        console.error(err);
-    }
+    setStatus("Camera and microphone enabled.");
+    console.log("Local media ready");
+  } catch (err) {
+    console.error("Media error:", err);
+    setStatus("Could not access camera/microphone.");
+    alert("Could not access camera/microphone.");
+  }
 }
 
-// PEER
 function setupPeer() {
-    const id = "user-" + Math.random().toString(36).substring(2, 7);
+  const id = "user-" + Math.random().toString(36).substring(2, 7);
 
-    peer = new Peer(id);
+  peer = new Peer(id, {
+    host: "0.peerjs.com",
+    port: 443,
+    secure: true
+  });
 
-    peer.on("open", (id) => {
-        document.getElementById("my-id").innerText = id;
-        console.log("My ID:", id);
-    });
+  peer.on("open", (id) => {
+    document.getElementById("my-id").innerText = id;
+    console.log("My ID:", id);
+  });
 
-    // 🔥 AUTO ANSWER
-    peer.on("call", (call) => {
-        console.log("Incoming call");
+  peer.on("call", (call) => {
+    console.log("Incoming call");
 
-        if (currentCall) currentCall.close();
+    if (!localStream) {
+      alert("Tap 'Enable Camera & Mic' first.");
+      setStatus("Incoming call blocked until camera/mic is enabled.");
+      return;
+    }
 
-        currentCall = call;
+    if (currentCall) {
+      currentCall.close();
+      currentCall = null;
+    }
 
-        call.answer(localStream);
-
-        call.on("stream", (remoteStream) => {
-            console.log("Remote stream received");
-            setRemote(remoteStream);
-        });
-
-        call.on("close", clearRemote);
-    });
-}
-
-// CALL
-function startCall() {
-    const remoteId = document.getElementById("remote-id").value.trim();
-
-    if (!remoteId) return alert("Enter ID");
-
-    if (currentCall) currentCall.close();
-
-    const call = peer.call(remoteId, localStream);
     currentCall = call;
+    call.answer(localStream);
 
     call.on("stream", (remoteStream) => {
-        console.log("Connected");
-        setRemote(remoteStream);
+      console.log("Remote stream received");
+      attachRemoteStream(remoteStream);
+      setStatus("Connected.");
     });
 
-    call.on("close", clearRemote);
+    call.on("close", () => {
+      console.log("Call ended");
+      clearRemote();
+      setStatus("Call ended.");
+    });
+
+    call.on("error", (err) => {
+      console.error("Incoming call error:", err);
+      setStatus("Incoming call error.");
+    });
+  });
+
+  peer.on("error", (err) => {
+    console.error("Peer error:", err);
+    setStatus("Peer connection error.");
+  });
 }
 
-// SET REMOTE VIDEO
-function setRemote(stream) {
-    const video = document.getElementById("remote-video");
+function startCall() {
+  const remoteId = document.getElementById("remote-id").value.trim();
 
-    video.srcObject = stream;
+  if (!localStream) {
+    alert("Tap 'Enable Camera & Mic' first.");
+    setStatus("Enable camera and microphone before calling.");
+    return;
+  }
 
-    video.onloadedmetadata = () => {
-        video.play();
-    };
+  if (!remoteId) {
+    alert("Enter remote ID");
+    return;
+  }
+
+  if (currentCall) {
+    currentCall.close();
+    currentCall = null;
+  }
+
+  setStatus("Calling...");
+
+  const call = peer.call(remoteId, localStream);
+  currentCall = call;
+
+  call.on("stream", (remoteStream) => {
+    console.log("Connected — receiving remote stream");
+    attachRemoteStream(remoteStream);
+    setStatus("Connected.");
+  });
+
+  call.on("close", () => {
+    console.log("Outgoing call closed");
+    clearRemote();
+    setStatus("Call ended.");
+  });
+
+  call.on("error", (err) => {
+    console.error("Outgoing call error:", err);
+    setStatus("Outgoing call error.");
+  });
 }
 
-// CLEAR
+function attachRemoteStream(stream) {
+  const remoteVideo = document.getElementById("remote-video");
+  if (!remoteVideo) return;
+
+  remoteVideo.srcObject = stream;
+  remoteVideo.onloadedmetadata = () => {
+    remoteVideo.play().catch((err) => {
+      console.error("Remote video play failed:", err);
+    });
+  };
+}
+
 function clearRemote() {
-    document.getElementById("remote-video").srcObject = null;
+  const remoteVideo = document.getElementById("remote-video");
+  if (remoteVideo) {
+    remoteVideo.srcObject = null;
+  }
 }
