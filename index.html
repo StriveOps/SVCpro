@@ -427,6 +427,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
         <button class="ai-btn" id="btn-rec" onclick="toggleTranscript()">🎙 Start Transcript</button>
         <button class="ai-btn ac" id="btn-form" onclick="generateForm()">✨ Generate Form</button>
         <button class="ai-btn" id="btn-pdf" onclick="exportPDF()">📄 Export PDF</button>
+        <button class="ai-btn" id="btn-savetx" onclick="saveTranscript()">💾 Save Transcript</button>
       </div>
       <div class="transcript-wrap" id="tx-wrap">
         <div class="ai-empty" id="ai-empty">
@@ -586,7 +587,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font
 <!-- ══ AI COACHING FORM MODAL ════════════════════════════════ -->
 <div class="overlay" id="form-ov">
 <div class="modal" style="max-width:520px">
-  <div class="mhd"><div class="mtitle">📋 Coaching Form</div><button class="mx" onclick="CO('form-ov')">×</button></div>
+  <div class="mhd"><div class="mtitle">📋 SMART Coaching Report</div><button class="mx" onclick="CO('form-ov')">×</button></div>
   <div class="mbody" id="form-body">
     <div style="font-size:12px;color:var(--t3);text-align:center">Generating form from transcript…</div>
   </div>
@@ -1264,21 +1265,50 @@ function stopTranscript(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  AI — COACHING FORM GENERATION (Claude API)
+//  AI — SMART COACHING FORM (opens immediately, AI fills if key set)
 // ═══════════════════════════════════════════════════════════════
 async function generateForm(){
+  const today=new Date().toISOString().slice(0,10);
+  // Pre-fill what we already know
+  const base={
+    teamLeader: myName||"",
+    expertName: remoteName||"",
+    lineOfBusiness:"",
+    coachingDate: today,
+    overallGoal:"",
+    specific:"",
+    measurable:"",
+    achievable:"",
+    relevant:"",
+    timeBound:"",
+    opportunities:"",
+    feedback:"",
+    commitment:""
+  };
+  coachingForm=base;
+  renderForm(base);
+  OV("form-ov");
+
+  // Try Claude fill if we have both a key and transcript
   const apiKey=localStorage.getItem("so_api_key")||G("api-key-in").value.trim();
   if(!apiKey){
-    st("Add your Anthropic API key in Settings → Claude AI Key first.");
-    OV("settings-ov");return;
+    st("Form opened. Add your API key in Settings to auto-fill from transcript.");
+    return;
   }
   if(transcript.length===0){
-    st("No transcript yet — start transcription first.");return;
+    st("Form opened. Start transcription during a session for AI auto-fill.");
+    return;
   }
+
+  // Show loading state in AI fields only
+  const aiFields=["overallGoal","specific","measurable","achievable","relevant","timeBound","opportunities","feedback","commitment"];
+  aiFields.forEach(k=>{
+    const el=G("ff-"+k);
+    if(el){el.value="✨ Generating…";el.style.color="var(--t3)";}
+  });
+  st("Generating SMART coaching form from transcript…");
+
   const txText=transcript.map(t=>`${t.speaker}: ${t.text}`).join("\n");
-  const sessionDate=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
-  G("form-body").innerHTML=`<div style="text-align:center;color:var(--t3);padding:20px;font-size:13px">✨ Generating form from transcript…</div>`;
-  OV("form-ov");
   try{
     const res=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
@@ -1290,115 +1320,195 @@ async function generateForm(){
       },
       body:JSON.stringify({
         model:"claude-sonnet-4-20250514",
-        max_tokens:1000,
-        messages:[{role:"user",content:`You are a professional coaching assistant. Based on this session transcript, generate a structured coaching form.
+        max_tokens:1500,
+        messages:[{role:"user",content:`You are a professional coaching assistant. Analyze this session transcript and fill out a SMART coaching form.
+
+COACH: ${myName||"Coach"}
+CLIENT/EXPERT: ${remoteName||"Expert"}
 
 TRANSCRIPT:
 ${txText}
 
-Return ONLY valid JSON with these exact fields (no markdown, no explanation):
+Return ONLY valid JSON with these exact fields (no markdown, no code fences):
 {
-  "clientName": "detected client name or empty string",
-  "coachName": "${myName||"Coach"}",
-  "sessionDate": "${sessionDate}",
-  "sessionGoals": "2-3 sentence summary of goals discussed",
-  "keyObservations": "coach observations about the client",
-  "strengthsIdentified": "strengths observed during session",
-  "areasForGrowth": "areas the client should work on",
-  "actionItems": "specific action items discussed (bullet list as text)",
-  "followUpPlan": "next steps and follow-up schedule",
-  "additionalNotes": "any other relevant notes"
+  "lineOfBusiness": "line of business or team context detected from transcript",
+  "overallGoal": "the main goal of this coaching session in 1-2 sentences",
+  "specific": "what specific behavior, skill, or outcome was identified",
+  "measurable": "how success will be measured — metrics, targets, or observable outcomes",
+  "achievable": "why this goal is realistic and what resources/support are available",
+  "relevant": "how this goal connects to the expert's role and business objectives",
+  "timeBound": "deadline or timeframe agreed upon for achieving this goal",
+  "opportunities": "key opportunities or areas of improvement identified during the session",
+  "feedback": "coach/team leader feedback and observations from this session",
+  "commitment": "specific commitments or action items the expert agreed to"
 }`}]
       })
     });
     const data=await res.json();
     const text=data.content?.[0]?.text||"{}";
-    const clean=text.replace(/```json|```/g,"").trim();
-    coachingForm=JSON.parse(clean);
-    renderForm(coachingForm);
-    st("Coaching form generated.");
+    const clean=text.replace(/```json[\s\S]*?```|```/g,"").trim();
+    const filled=JSON.parse(clean);
+    // Merge AI results into form
+    coachingForm={...base,...filled};
+    // Update only the AI-filled fields — preserve manual edits to header fields
+    Object.keys(filled).forEach(k=>{
+      const el=G("ff-"+k);
+      if(el){el.value=filled[k]||"";el.style.color="";}
+    });
+    st("SMART form filled from transcript. Review and edit before exporting.");
   }catch(e){
     console.error(e);
-    G("form-body").innerHTML=`<div style="color:var(--red);font-size:13px;padding:12px">Error generating form: ${esc(e.message)}<br><br><span style="color:var(--t3);font-size:11px">Check your API key in Settings or try again.</span></div>`;
+    aiFields.forEach(k=>{const el=G("ff-"+k);if(el){el.value="";el.style.color="";}});
+    st("AI fill failed: "+e.message+" — fill manually or check API key in Settings.");
   }
 }
 
+// SMART coaching form structure matching your coaching_report.html
 function renderForm(f){
-  const fields=[
-    ["Client Name","clientName"],["Coach Name","coachName"],
-    ["Session Date","sessionDate"],["Session Goals","sessionGoals"],
-    ["Key Observations","keyObservations"],["Strengths Identified","strengthsIdentified"],
-    ["Areas for Growth","areasForGrowth"],["Action Items","actionItems"],
-    ["Follow-Up Plan","followUpPlan"],["Additional Notes","additionalNotes"]
-  ];
-  G("form-body").innerHTML=fields.map(([label,key])=>`
-    <div class="form-field">
-      <div class="ff-label">${label}</div>
-      <textarea class="ff-value" id="ff-${key}" rows="${key.includes("Notes")||key==="actionItems"?4:2}">${esc(f[key]||"")}</textarea>
-    </div>`).join("");
+  G("form-body").innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${ff("Team Leader","teamLeader",f.teamLeader,1)}
+      ${ff("Expert / Client Name","expertName",f.expertName,1)}
+      ${ff("Line of Business","lineOfBusiness",f.lineOfBusiness,1)}
+      ${ff("Coaching Date","coachingDate",f.coachingDate,1,true)}
+    </div>
+    <div style="height:1px;background:var(--bd);margin:4px 0"></div>
+    ${ff("Overall Goal","overallGoal",f.overallGoal,2)}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${ff("Specific","specific",f.specific,3)}
+      ${ff("Measurable","measurable",f.measurable,3)}
+      ${ff("Achievable","achievable",f.achievable,3)}
+      ${ff("Relevant","relevant",f.relevant,3)}
+    </div>
+    ${ff("Time-Bound","timeBound",f.timeBound,2)}
+    ${ff("Opportunities","opportunities",f.opportunities,3)}
+    ${ff("Team Leader Feedback","feedback",f.feedback,3)}
+    ${ff("Expert Commitment","commitment",f.commitment,3)}
+  `;
+}
+
+function ff(label,key,val,rows,isDate=false){
+  if(isDate){
+    return`<div class="form-field"><div class="ff-label">${label}</div>
+      <input type="date" class="ff-value" id="ff-${key}" value="${esc(val||"")}" style="height:36px;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg0);color:var(--t1);font-family:var(--fu);font-size:13px;outline:none;width:100%"/>
+    </div>`;
+  }
+  return`<div class="form-field"><div class="ff-label">${label}</div>
+    <textarea class="ff-value" id="ff-${key}" rows="${rows}">${esc(val||"")}</textarea>
+  </div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  PDF EXPORT
+//  SMART REPORT — opens styled print window (matches coaching_report.html)
 // ═══════════════════════════════════════════════════════════════
 function exportPDF(){
-  if(!coachingForm){st("Generate the coaching form first.");return;}
-  // Read any edits the user made in the form
-  const fields=["clientName","coachName","sessionDate","sessionGoals","keyObservations",
-    "strengthsIdentified","areasForGrowth","actionItems","followUpPlan","additionalNotes"];
-  const data={};
-  fields.forEach(k=>{
+  const f={};
+  const keys=["teamLeader","expertName","lineOfBusiness","coachingDate",
+    "overallGoal","specific","measurable","achievable","relevant",
+    "timeBound","opportunities","feedback","commitment"];
+  keys.forEach(k=>{
     const el=G("ff-"+k);
-    data[k]=el?el.value:coachingForm[k]||"";
+    f[k]=el?(el.value||el.dataset.val||""):(coachingForm?coachingForm[k]||"":"");
   });
-  if(!window.jspdf){st("PDF library loading, try again in a moment.");return;}
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-  const W=210, M=20, CW=W-M*2;
-  let y=M;
-  // Header
-  doc.setFillColor(8,12,26);doc.rect(0,0,W,28,"F");
-  doc.setTextColor(45,212,191);doc.setFontSize(20);doc.setFont("helvetica","bold");
-  doc.text("STRIVE-OPS",M,14);
-  doc.setTextColor(140,148,184);doc.setFontSize(10);doc.setFont("helvetica","normal");
-  doc.text("Live Coaching Session Report",M,20);
-  doc.setTextColor(61,78,114);doc.text(data.sessionDate||new Date().toLocaleDateString(),W-M,20,{align:"right"});
-  y=36;
-  // Client info bar
-  doc.setFillColor(13,17,34);doc.rect(M,y,CW,12,"F");
-  doc.setTextColor(221,230,255);doc.setFontSize(11);doc.setFont("helvetica","bold");
-  doc.text("Client: "+(data.clientName||"—")+"   |   Coach: "+(data.coachName||"—"),M+4,y+8);
-  y+=20;
-  // Content sections
-  const sections=[
-    ["Session Goals",data.sessionGoals],["Key Observations",data.keyObservations],
-    ["Strengths Identified",data.strengthsIdentified],["Areas for Growth",data.areasForGrowth],
-    ["Action Items",data.actionItems],["Follow-Up Plan",data.followUpPlan],
-    ["Additional Notes",data.additionalNotes]
-  ];
-  doc.setTextColor(45,212,191);doc.setFontSize(9);
-  sections.forEach(([label,val])=>{
-    if(!val)return;
-    if(y>265){doc.addPage();y=M;}
-    doc.setFont("helvetica","bold");doc.setTextColor(45,212,191);
-    doc.text(label.toUpperCase(),M,y);y+=5;
-    doc.setFont("helvetica","normal");doc.setTextColor(60,70,100);
-    const lines=doc.splitTextToSize(val||"—",CW);
-    lines.forEach(line=>{
-      if(y>270){doc.addPage();y=M;}
-      doc.text(line,M,y);y+=5;
-    });
-    y+=5;
-  });
-  // Footer
-  const pages=doc.internal.getNumberOfPages();
-  for(let i=1;i<=pages;i++){
-    doc.setPage(i);doc.setFontSize(8);doc.setTextColor(61,78,114);
-    doc.text("Strive-Ops · Live Coaching Platform · Confidential",M,290);
-    doc.text("Page "+i+" of "+pages,W-M,290,{align:"right"});
-  }
-  doc.save(`coaching-${(data.clientName||"session").replace(/\s+/g,"-").toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`);
-  st("PDF exported.");
+  if(keys.every(k=>!f[k])){st("Fill in or generate the form first.");return;}
+
+  const fmtDate=d=>{if(!d)return"—";try{return new Date(d+"T12:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});}catch{return d;}};
+  const e=v=>String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const row=(lbl,val)=>`<tr><td class="lc">${lbl}</td><td>${e(val)||"—"}</td></tr>`;
+
+  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<title>SMART Coaching Report — ${e(f.expertName||"Session")}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:#ecf0f7;padding:30px 14px 50px;color:#1e2a38;}
+.wrap{max-width:710px;margin:0 auto;background:#fff;padding:34px 42px 30px;border-radius:10px;box-shadow:0 4px 20px rgba(26,58,92,.13);}
+.hdr{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #1a3a5c;padding-bottom:13px;margin-bottom:20px;}
+.hdr-brand{font-family:'DM Serif Display',serif;font-size:22px;color:#1a3a5c;}
+.hdr-brand em{color:#2dd4bf;font-style:normal;}
+.hdr-title{font-size:17px;font-weight:700;color:#1a3a5c;text-align:center;flex:1;}
+.hdr-date{font-size:11px;color:#8a9bb0;text-align:right;min-width:100px;}
+table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13px;}
+thead th{background:#1a3a5c;color:#fff;text-align:left;padding:7px 11px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.sh thead th{background:#2a5298;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+td{padding:9px 11px;border:1px solid #cdd8ea;vertical-align:top;line-height:1.6;}
+.lc{font-weight:700;color:#1a3a5c;background:#edf2fb;width:155px;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+tr:nth-child(even) td:not(.lc){background:#f5f8fd;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.ftr{margin-top:20px;border-top:1px solid #cdd8ea;padding-top:10px;display:flex;justify-content:space-between;align-items:center;}
+.ftr-txt{font-size:11px;color:#8a9bb0;}
+.print-btn{display:flex;justify-content:center;margin:24px 0 4px;}
+.print-btn button{padding:11px 34px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font:600 14px/1 'DM Sans',sans-serif;cursor:pointer;}
+@media print{
+  body{background:#fff!important;padding:0!important;}
+  .wrap{box-shadow:none!important;border-radius:0!important;padding:18px 26px!important;}
+  .no-print{display:none!important;}
+  tr{page-break-inside:avoid;}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+}
+</style></head><body>
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-brand">Strive<em>-Ops</em></div>
+    <div class="hdr-title">SMART Coaching Report</div>
+    <div class="hdr-date">${fmtDate(f.coachingDate)}</div>
+  </div>
+  <table>
+    <thead><tr><th colspan="2">Session Details</th></tr></thead>
+    <tbody>
+      ${row("Team Leader",f.teamLeader)}
+      ${row("Expert Name",f.expertName)}
+      ${row("Line of Business",f.lineOfBusiness)}
+      ${row("Coaching Date",fmtDate(f.coachingDate))}
+    </tbody>
+  </table>
+  <table class="sh">
+    <thead><tr><th colspan="2">SMART Coaching Notes</th></tr></thead>
+    <tbody>
+      ${row("Overall Goal",f.overallGoal)}
+      ${row("Specific",f.specific)}
+      ${row("Measurable",f.measurable)}
+      ${row("Achievable",f.achievable)}
+      ${row("Relevant",f.relevant)}
+      ${row("Time-Bound",f.timeBound)}
+      ${row("Opportunities",f.opportunities)}
+      ${row("Team Leader Feedback",f.feedback)}
+      ${row("Expert Commitment",f.commitment)}
+    </tbody>
+  </table>
+  <div class="ftr">
+    <div class="ftr-txt">Strive-Ops · Live Coaching Platform · Confidential</div>
+    <div class="ftr-txt">Generated ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>
+  </div>
+  <div class="no-print print-btn">
+    <button onclick="window.print()">⬇ Save as PDF — choose "Save as PDF" in print dialog</button>
+  </div>
+</div>
+</body></html>`;
+
+  const w=window.open("","_blank");
+  if(!w){st("Pop-ups blocked — allow pop-ups for this page.");return;}
+  w.document.open();w.document.write(html);w.document.close();
+  st("Report opened — click 'Save as PDF' inside that window.");
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SAVE TRANSCRIPT
+// ═══════════════════════════════════════════════════════════════
+function saveTranscript(){
+  if(transcript.length===0){st("No transcript to save yet.");return;}
+  const sessionName=G("sname-el").textContent||"Session";
+  const date=new Date().toISOString().slice(0,10);
+  const header=`STRIVE-OPS — SESSION TRANSCRIPT\n${sessionName}\n${new Date().toLocaleString()}\nCoach: ${myName||"—"} | Peer: ${remoteName||"—"}\n${"─".repeat(50)}\n\n`;
+  const body=transcript.map(t=>{
+    const time=new Date(t.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    return`[${time}] ${t.speaker}:\n${t.text}\n`;
+  }).join("\n");
+  const blob=new Blob([header+body],{type:"text/plain"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`transcript-${sessionName.replace(/\s+/g,"-").toLowerCase()}-${date}.txt`;
+  a.click();URL.revokeObjectURL(a.href);
+  st("Transcript saved as .txt file.");
 }
 
 // ═══════════════════════════════════════════════════════════════
