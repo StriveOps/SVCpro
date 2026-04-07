@@ -1,46 +1,85 @@
 let peer;
 let localStream = null;
 let currentCall = null;
-let viewerMode = false;
 let pendingRemoteStream = null;
+let mode = "viewer"; // "host" or "viewer"
 
-window.onload = () => {
+window.addEventListener("load", () => {
   initPeer();
-  bindUi();
-  autofillJoinId();
-};
+  bindUI();
+});
 
-function bindUi() {
-  document.getElementById("enable-media-btn").addEventListener("click", enableMedia);
-  document.getElementById("viewer-btn").addEventListener("click", enableViewerMode);
-  document.getElementById("connect-btn").addEventListener("click", startCall);
+function bindUI() {
+  document.getElementById("host-btn").addEventListener("click", becomeHost);
+  document.getElementById("viewer-btn").addEventListener("click", becomeViewer);
+  document.getElementById("join-btn").addEventListener("click", joinHost);
   document.getElementById("hangup-btn").addEventListener("click", hangUp);
-  document.getElementById("copy-link-btn").addEventListener("click", copyInviteLink);
-  document.getElementById("tap-play-remote").addEventListener("click", forcePlayRemote);
+  document.getElementById("copy-btn").addEventListener("click", copyMyId);
+  document.getElementById("tap-play").addEventListener("click", forcePlayRemote);
 }
 
-function setStatus(message) {
-  document.getElementById("status").innerText = message;
+function setStatus(text) {
+  document.getElementById("status").innerText = text;
 }
 
-function showLocalVideo(show) {
+function showLocal(show) {
   document.getElementById("local-video").style.display = show ? "block" : "none";
   document.getElementById("local-placeholder").style.display = show ? "none" : "flex";
 }
 
-function showRemoteVideo(show) {
+function showRemote(show) {
   document.getElementById("remote-video").style.display = show ? "block" : "none";
   document.getElementById("remote-placeholder").style.display = show ? "none" : "flex";
 }
 
 function showTapPlay(show) {
-  document.getElementById("tap-play-remote").style.display = show ? "block" : "none";
+  document.getElementById("tap-play").style.display = show ? "block" : "none";
 }
 
-async function enableMedia() {
+function initPeer() {
+  const id = "svc-" + Math.random().toString(36).substring(2, 8);
+
+  peer = new Peer(id, {
+    host: "0.peerjs.com",
+    port: 443,
+    secure: true
+  });
+
+  peer.on("open", (id) => {
+    document.getElementById("my-id").innerText = id;
+    setStatus("Connected to signaling server.");
+  });
+
+  peer.on("call", async (call) => {
+    if (currentCall) {
+      currentCall.close();
+      currentCall = null;
+    }
+
+    currentCall = call;
+
+    // Host sends camera. Viewer answers without media.
+    if (mode === "host" && localStream) {
+      call.answer(localStream);
+      setStatus("Viewer connected. Sending live feed.");
+    } else {
+      call.answer();
+      setStatus("Receiving live feed...");
+    }
+
+    attachCallEvents(call);
+  });
+
+  peer.on("error", (err) => {
+    console.error("Peer error:", err);
+    setStatus("Peer error: " + (err.type || "unknown"));
+  });
+}
+
+async function becomeHost() {
   try {
+    mode = "host";
     setStatus("Requesting camera and microphone...");
-    viewerMode = false;
 
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
@@ -58,67 +97,35 @@ async function enableMedia() {
     localVideo.playsInline = true;
     await localVideo.play();
 
-    showLocalVideo(true);
-    setStatus("Camera and microphone enabled.");
+    showLocal(true);
+    setStatus("You are now the host. Share your Session ID.");
   } catch (err) {
-    console.error("enableMedia error:", err);
+    console.error("Host media error:", err);
     setStatus("Could not access camera/microphone.");
     alert("Could not access camera/microphone.");
   }
 }
 
-function enableViewerMode() {
-  viewerMode = true;
-  setStatus("Viewer mode enabled. This device will receive video without sending its own camera.");
-  showLocalVideo(false);
+function becomeViewer() {
+  mode = "viewer";
+
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+  }
+
+  const localVideo = document.getElementById("local-video");
+  localVideo.srcObject = null;
+  showLocal(false);
+
+  setStatus("Viewer mode enabled. Paste a Host ID and click Join Host.");
 }
 
-function initPeer() {
-  const id = "user-" + Math.random().toString(36).substring(2, 8);
+function joinHost() {
+  const hostId = document.getElementById("host-id-input").value.trim();
 
-  peer = new Peer(id, {
-    host: "0.peerjs.com",
-    port: 443,
-    secure: true
-  });
-
-  peer.on("open", (id) => {
-    document.getElementById("my-id").innerText = id;
-    setStatus("Ready.");
-  });
-
-  peer.on("call", (call) => {
-    console.log("Incoming call from", call.peer);
-
-    if (currentCall) {
-      currentCall.close();
-      currentCall = null;
-    }
-
-    currentCall = call;
-
-    if (localStream) {
-      call.answer(localStream);
-      setStatus("Incoming call answered with local camera.");
-    } else {
-      call.answer();
-      setStatus("Incoming call answered in viewer mode.");
-    }
-
-    attachCallEvents(call);
-  });
-
-  peer.on("error", (err) => {
-    console.error("Peer error:", err);
-    setStatus("Peer error: " + (err.type || "unknown"));
-  });
-}
-
-function startCall() {
-  const remoteId = document.getElementById("remote-id").value.trim();
-
-  if (!remoteId) {
-    alert("Enter remote ID.");
+  if (!hostId) {
+    alert("Paste a Host ID first.");
     return;
   }
 
@@ -127,26 +134,20 @@ function startCall() {
     currentCall = null;
   }
 
-  setStatus("Calling...");
+  setStatus("Joining host...");
 
-  if (localStream) {
-    currentCall = peer.call(remoteId, localStream);
-  } else {
-    currentCall = peer.call(remoteId);
-  }
-
+  // Viewer calls host without sending media.
+  currentCall = peer.call(hostId);
   attachCallEvents(currentCall);
 }
 
 function attachCallEvents(call) {
   call.on("stream", (remoteStream) => {
-    console.log("Remote stream received");
     pendingRemoteStream = remoteStream;
     attachRemoteStream(remoteStream);
   });
 
   call.on("close", () => {
-    console.log("Call closed");
     clearRemote();
     setStatus("Call ended.");
   });
@@ -162,23 +163,23 @@ function attachRemoteStream(stream) {
   remoteVideo.srcObject = stream;
   remoteVideo.playsInline = true;
 
-  showRemoteVideo(true);
+  showRemote(true);
 
-  const playAttempt = remoteVideo.play();
+  const playPromise = remoteVideo.play();
 
-  if (playAttempt && typeof playAttempt.then === "function") {
-    playAttempt
+  if (playPromise && typeof playPromise.then === "function") {
+    playPromise
       .then(() => {
         showTapPlay(false);
-        setStatus("Connected.");
+        setStatus("Live feed connected.");
       })
       .catch((err) => {
-        console.error("Remote autoplay blocked:", err);
+        console.error("Autoplay blocked:", err);
         showTapPlay(true);
-        setStatus("Remote stream received. Tap button to start video.");
+        setStatus("Tap the button to start the live video.");
       });
   } else {
-    setStatus("Connected.");
+    setStatus("Live feed connected.");
   }
 }
 
@@ -192,11 +193,11 @@ function forcePlayRemote() {
   remoteVideo.play()
     .then(() => {
       showTapPlay(false);
-      setStatus("Connected.");
+      setStatus("Live feed connected.");
     })
     .catch((err) => {
-      console.error("Manual remote play failed:", err);
-      setStatus("Tap again to start remote video.");
+      console.error("Manual play failed:", err);
+      setStatus("Tap again to start the live video.");
     });
 }
 
@@ -204,7 +205,7 @@ function clearRemote() {
   const remoteVideo = document.getElementById("remote-video");
   remoteVideo.srcObject = null;
   pendingRemoteStream = null;
-  showRemoteVideo(false);
+  showRemote(false);
   showTapPlay(false);
 }
 
@@ -217,25 +218,16 @@ function hangUp() {
   setStatus("Ready.");
 }
 
-function autofillJoinId() {
-  const params = new URLSearchParams(window.location.search);
-  const joinId = params.get("join");
-  if (joinId) {
-    document.getElementById("remote-id").value = joinId;
-  }
-}
-
-async function copyInviteLink() {
+async function copyMyId() {
   const myId = document.getElementById("my-id").innerText;
+
   if (!myId || myId === "Connecting...") return;
 
-  const link = `${window.location.origin}${window.location.pathname}?join=${myId}`;
-
   try {
-    await navigator.clipboard.writeText(link);
-    setStatus("Invite link copied.");
+    await navigator.clipboard.writeText(myId);
+    setStatus("Session ID copied.");
   } catch (err) {
     console.error("Clipboard error:", err);
-    prompt("Copy this link:", link);
+    prompt("Copy this Session ID:", myId);
   }
 }
