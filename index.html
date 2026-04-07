@@ -1,1696 +1,1098 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Strive-Ops · Live Ops Coaching</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
-
-  <style>
-    :root {
-      --bg0: #050810;
-      --bg1: #090d1a;
-      --bg2: #0d1222;
-      --bg3: #13192e;
-      --bg4: #1b2340;
-      --border: rgba(255,255,255,0.065);
-      --border-hi: rgba(255,255,255,0.13);
-      --t1: #dde6ff;
-      --t2: #7a8cb0;
-      --t3: #3d4e72;
-      --accent: #2dd4bf;
-      --accent-dim: rgba(45,212,191,0.10);
-      --accent-glow: rgba(45,212,191,0.18);
-      --red: #f87171;
-      --red-dim: rgba(248,113,113,0.12);
-      --amber: #fbbf24;
-      --sidebar: 230px;
-      --panel: 268px;
-      --font-ui: 'Barlow', sans-serif;
-      --font-brand: 'Barlow Condensed', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-      --radius: 12px;
-      --radius-sm: 8px;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-
-    body {
-      font-family: var(--font-ui);
-      background: var(--bg0);
-      color: var(--t1);
-      display: flex;
-    }
-
-    /* ── SCROLLBAR ── */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
-
-    /* ══════════════════════════════════════════
-       SIDEBAR
-    ══════════════════════════════════════════ */
-    .sidebar {
-      width: var(--sidebar);
-      min-width: var(--sidebar);
-      height: 100vh;
-      background: var(--bg1);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .brand-block {
-      padding: 18px 16px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .brand-name {
-      font-family: var(--font-brand);
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      line-height: 1;
-      color: var(--t1);
-    }
-
-    .brand-name em {
-      color: var(--accent);
-      font-style: normal;
-    }
-
-    .brand-sub {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--t3);
-      margin-top: 4px;
-    }
-
-    /* session ID card */
-    .session-card {
-      margin: 12px;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 11px 13px;
-    }
-
-    .session-card-top {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-bottom: 7px;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--t3);
-      flex-shrink: 0;
-      transition: background 0.3s, box-shadow 0.3s;
-    }
-
-    .status-dot.online  { background: var(--accent); box-shadow: 0 0 7px var(--accent); }
-    .status-dot.ringing { background: var(--amber);  box-shadow: 0 0 7px var(--amber); animation: blink 0.8s infinite; }
-    .status-dot.live    { background: var(--red);    box-shadow: 0 0 7px var(--red); }
-
-    @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
-
-    .session-label {
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--t3);
-    }
-
-    .session-id {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent);
-      word-break: break-all;
-      line-height: 1.5;
-    }
-
-    .session-id.placeholder { color: var(--t3); font-style: italic; }
-
-    /* connect area */
-    .connect-area {
-      padding: 0 12px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-
-    .s-input {
-      width: 100%;
-      padding: 9px 11px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg0);
-      color: var(--t1);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-
-    .s-input::placeholder { color: var(--t3); }
-    .s-input:focus { border-color: var(--accent); }
-
-    /* sidebar buttons */
-    .s-btn {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      width: 100%;
-      padding: 9px 13px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--t1);
-      cursor: pointer;
-      font-family: var(--font-ui);
-      font-size: 13px;
-      font-weight: 600;
-      transition: background 0.13s, border-color 0.13s;
-      text-align: left;
-    }
-
-    .s-btn:hover { background: var(--bg4); border-color: var(--border-hi); }
-
-    .s-btn.accent {
-      background: var(--accent-dim);
-      border-color: rgba(45,212,191,0.25);
-      color: var(--accent);
-    }
-
-    .s-btn.accent:hover { background: var(--accent-glow); }
-
-    .s-btn.danger {
-      background: var(--red-dim);
-      border-color: rgba(248,113,113,0.22);
-      color: var(--red);
-    }
-
-    .s-btn.danger:hover { background: rgba(248,113,113,0.18); }
-
-    .s-btn svg { flex-shrink: 0; opacity: 0.75; }
-
-    .sb-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 6px 12px;
-    }
-
-    .sb-section-label {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--t3);
-      padding: 8px 13px 4px;
-    }
-
-    .action-grid {
-      padding: 0 12px 8px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .action-tile {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px 8px;
-      cursor: pointer;
-      text-align: center;
-      transition: background 0.13s, border-color 0.13s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .action-tile:hover { background: var(--bg4); border-color: var(--border-hi); }
-    .action-tile.active { background: var(--accent-dim); border-color: rgba(45,212,191,0.25); }
-
-    .action-tile-icon { font-size: 16px; }
-    .action-tile-label { font-size: 10px; font-weight: 600; color: var(--t2); }
-    .action-tile.active .action-tile-label { color: var(--accent); }
-
-    .sidebar-footer {
-      margin-top: auto;
-      padding: 10px 13px;
-      border-top: 1px solid var(--border);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--t3);
-    }
-
-    /* ══════════════════════════════════════════
-       MAIN STAGE
-    ══════════════════════════════════════════ */
-    .stage {
-      flex: 1;
-      min-width: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg0);
-    }
-
-    /* top bar */
-    .topbar {
-      height: 50px;
-      min-height: 50px;
-      background: var(--bg1);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 0 18px;
-    }
-
-    .topbar-pill {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 11px 4px 8px;
-      border-radius: 20px;
-      background: var(--accent-dim);
-      border: 1px solid rgba(45,212,191,0.2);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.04em;
-    }
-
-    .topbar-pill .dot {
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .topbar-status {
-      flex: 1;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--t2);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .conn-badge {
-      font-size: 11px;
-      font-weight: 600;
-      font-family: var(--font-mono);
-      padding: 3px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      color: var(--t3);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.2s;
-    }
-
-    .conn-badge .conn-dot {
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.45;
-    }
-
-    .conn-badge.live {
-      color: var(--red);
-      border-color: rgba(248,113,113,0.3);
-      background: var(--red-dim);
-    }
-
-    .conn-badge.live .conn-dot { opacity: 1; animation: blink 1s infinite; }
-
-    /* video grid */
-    .video-grid {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      padding: 14px;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .video-tile {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .tile-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 9px 13px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg1);
-      flex-shrink: 0;
-    }
-
-    .tile-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.13em;
-      text-transform: uppercase;
-      color: var(--t3);
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .tile-badge {
-      font-size: 9px;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      padding: 2px 7px;
-      border-radius: 20px;
-      letter-spacing: 0.06em;
-    }
-
-    .tile-badge.offline { background: var(--bg4); color: var(--t3); border: 1px solid var(--border); }
-    .tile-badge.live    { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); animation: blink 2s infinite; }
-    .tile-badge.conn    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(45,212,191,0.25); }
-    .tile-badge.wait    { background: var(--bg3); color: var(--t3); border: 1px solid var(--border); }
-
-    .tile-body {
-      flex: 1;
-      position: relative;
-      background: #000;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .tile-body video,
-    .tile-body canvas {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    #local-canvas { transform: scaleX(-1); display: none; }
-    #remote-video { display: none; }
-
-    .tile-empty {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background: var(--bg2);
-    }
-
-    .tile-empty-icon {
-      width: 52px; height: 52px;
-      border-radius: 14px;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .tile-empty-text {
-      font-size: 12px;
-      color: var(--t3);
-      text-align: center;
-      line-height: 1.6;
-      max-width: 200px;
-    }
-
-    /* bottom controls bar inside tile */
-    .tile-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 7px 10px;
-      background: var(--bg1);
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .tc-group { display: flex; gap: 5px; align-items: center; }
-
-    .tc-btn {
-      width: 30px; height: 30px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--t2);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.13s;
-      padding: 0;
-    }
-
-    .tc-btn:hover { background: var(--bg4); color: var(--t1); border-color: var(--border-hi); }
-    .tc-btn.muted { background: var(--red-dim); border-color: rgba(248,113,113,0.3); color: var(--red); }
-    .tc-btn.fx-on { background: var(--accent-dim); border-color: rgba(45,212,191,0.25); color: var(--accent); }
-
-    #tap-play-btn {
-      display: none;
-      padding: 7px 14px;
-      border-radius: 8px;
-      border: 1px solid rgba(45,212,191,0.3);
-      background: var(--accent-dim);
-      color: var(--accent);
-      font-family: var(--font-ui);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    /* ══════════════════════════════════════════
-       RIGHT PANEL
-    ══════════════════════════════════════════ */
-    .right-panel {
-      width: var(--panel);
-      min-width: var(--panel);
-      height: 100vh;
-      background: var(--bg1);
-      border-left: 1px solid var(--border);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .rp-section {
-      border-bottom: 1px solid var(--border);
-    }
-
-    .rp-head {
-      padding: 13px 15px 9px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--t3);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .rp-body {
-      padding: 0 13px 13px;
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-    }
-
-    .rp-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .rp-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--t3);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .rp-label .active-name {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--accent);
-      font-weight: 400;
-      text-transform: none;
-      letter-spacing: 0;
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .rp-select {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg0);
-      color: var(--t1);
-      font-family: var(--font-ui);
-      font-size: 12px;
-      outline: none;
-      cursor: pointer;
-      transition: border-color 0.13s;
-      -webkit-appearance: none;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233d4e72' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      padding-right: 28px;
-    }
-
-    .rp-select:focus { border-color: var(--accent); }
-
-    .rp-btn {
-      width: 100%;
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--t1);
-      cursor: pointer;
-      font-family: var(--font-ui);
-      font-size: 12px;
-      font-weight: 600;
-      transition: background 0.13s, border-color 0.13s;
-      text-align: center;
-    }
-
-    .rp-btn:hover { background: var(--bg4); border-color: var(--border-hi); }
-
-    .rp-btn.accent {
-      background: var(--accent-dim);
-      border-color: rgba(45,212,191,0.25);
-      color: var(--accent);
-    }
-
-    .rp-btn.accent:hover { background: var(--accent-glow); }
-
-    .rp-row-inline {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 7px;
-    }
-
-    /* Effect picker */
-    .effect-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 5px;
-    }
-
-    .effect-chip {
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      cursor: pointer;
-      text-align: center;
-      padding: 8px 4px 6px;
-      transition: all 0.13s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .effect-chip:hover { background: var(--bg4); border-color: var(--border-hi); }
-
-    .effect-chip.on {
-      background: var(--accent-dim);
-      border-color: rgba(45,212,191,0.3);
-    }
-
-    .effect-chip .ei { font-size: 16px; }
-    .effect-chip .en { font-size: 9px; font-weight: 700; color: var(--t2); }
-    .effect-chip.on .en { color: var(--accent); }
-
-    /* Device status indicator row */
-    .device-status-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 10px;
-      border-radius: var(--radius-sm);
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--t2);
-    }
-
-    .device-status-row svg { flex-shrink: 0; }
-
-    .device-status-row .ds-name {
-      flex: 1;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--accent);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .device-status-row .ds-none {
-      color: var(--t3);
-      font-style: italic;
-    }
-
-    /* refresh devices hint */
-    .refresh-hint {
-      font-size: 10px;
-      color: var(--t3);
-      text-align: center;
-      padding: 2px 0;
-    }
-
-    /* ══════════════════════════════════════════
-       INCOMING CALL MODAL
-    ══════════════════════════════════════════ */
-    #incoming-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.82);
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-
-    .modal {
-      background: var(--bg2);
-      border: 1px solid var(--border-hi);
-      border-radius: 18px;
-      max-width: 330px;
-      width: 100%;
-      padding: 28px 24px;
-      text-align: center;
-    }
-
-    .modal-ring {
-      width: 60px; height: 60px;
-      border-radius: 50%;
-      background: var(--accent-dim);
-      border: 2px solid rgba(45,212,191,0.3);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
-      margin: 0 auto 16px;
-      animation: blink 1s infinite;
-    }
-
-    .modal-title {
-      font-family: var(--font-brand);
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      margin-bottom: 6px;
-    }
-
-    .modal-peer {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--t2);
-      margin-bottom: 22px;
-      word-break: break-all;
-    }
-
-    .modal-btns { display: flex; gap: 10px; }
-
-    .modal-btn {
-      flex: 1;
-      padding: 11px 0;
-      border-radius: 10px;
-      border: 0;
-      cursor: pointer;
-      font-family: var(--font-ui);
-      font-size: 13px;
-      font-weight: 700;
-      transition: opacity 0.13s;
-    }
-
-    .modal-btn:hover { opacity: 0.85; }
-    .modal-btn.accept { background: var(--accent); color: #022c22; }
-    .modal-btn.decline { background: var(--bg4); color: var(--t2); }
-
-    /* ══════════════════════════════════════════
-       HIDDEN PROCESSING ELEMENTS
-    ══════════════════════════════════════════ */
-    .hidden { display: none !important; }
-
-    /* ══════════════════════════════════════════
-       RESPONSIVE
-    ══════════════════════════════════════════ */
-    @media (max-width: 900px) {
-      :root { --panel: 0px; }
-      .right-panel { display: none; }
-    }
-
-    @media (max-width: 650px) {
-      :root { --sidebar: 52px; }
-      .brand-sub, .session-card, .connect-area,
-      .sb-section-label, .action-grid, .s-btn span,
-      .sidebar-footer { display: none; }
-      .brand-name { font-size: 14px; }
-      .video-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Strive-Ops · Live Coaching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg0:#04060f;--bg1:#080c1a;--bg2:#0c1122;--bg3:#111829;--bg4:#182035;
+  --bd:rgba(255,255,255,0.07);--bdh:rgba(255,255,255,0.14);
+  --t1:#dde6ff;--t2:#8494b8;--t3:#3d4e72;
+  --ac:#2dd4bf;--adim:rgba(45,212,191,0.11);--aglow:rgba(45,212,191,0.20);
+  --red:#f87171;--rdim:rgba(248,113,113,0.13);
+  --amb:#fbbf24;--amdim:rgba(251,191,36,0.12);
+  --pw:320px;--tbh:68px;--tph:50px;
+  --fu:'Barlow',sans-serif;--fb:'Barlow Condensed',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t1);font-family:var(--fu)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* TOPBAR */
+.topbar{height:var(--tph);min-height:var(--tph);background:var(--bg1);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:12px;padding:0 18px;flex-shrink:0}
+.tb-brand{font-family:var(--fb);font-size:20px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+.tb-brand em{color:var(--ac);font-style:normal}
+.tb-sep{width:1px;height:22px;background:var(--bd);flex-shrink:0}
+.tb-sname{font-size:13px;font-weight:600;color:var(--t2)}
+.tb-pin{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;
+  border-radius:20px;background:var(--adim);border:1px solid rgba(45,212,191,.2);color:var(--ac)}
+.tb-timer{font-family:var(--fm);font-size:12px;color:var(--t2);min-width:48px}
+.tb-sp{flex:1}
+.tb-status{font-family:var(--fm);font-size:11px;color:var(--t3);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-dot{width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:background .3s,box-shadow .3s}
+.tb-dot.on{background:var(--ac);box-shadow:0 0 8px var(--ac)}
+.tb-dot.ring{background:var(--amb);box-shadow:0 0 8px var(--amb);animation:bl .8s infinite}
+.tb-dot.live{background:var(--red);box-shadow:0 0 8px var(--red)}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* MIDDLE */
+.middle{flex:1;display:flex;min-height:0;overflow:hidden}
+
+/* VIDEO STAGE */
+.vstage{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
+  padding:14px;gap:12px;background:var(--bg0);position:relative}
+.vstage.sharing .tile-screen{flex:1.8}
+.vstage.sharing .tile-local{flex:0.55;max-width:260px}
+
+.vtile{flex:1;aspect-ratio:16/9;max-height:100%;background:#000;border-radius:14px;
+  overflow:hidden;position:relative;border:1px solid var(--bd);display:flex;flex-direction:column}
+
+.th{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;
+  justify-content:space-between;padding:8px 12px;z-index:2;
+  background:linear-gradient(to bottom,rgba(0,0,0,.65) 0%,transparent 100%)}
+.tname{font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.tbadge{font-size:9px;font-weight:700;font-family:var(--fm);padding:2px 7px;border-radius:20px;letter-spacing:.06em}
+.b-off{background:rgba(0,0,0,.4);color:var(--t3);border:1px solid rgba(255,255,255,.1)}
+.b-live{background:rgba(248,113,113,.2);color:var(--red);border:1px solid rgba(248,113,113,.3);animation:bl 2s infinite}
+.b-conn{background:rgba(45,212,191,.15);color:var(--ac);border:1px solid rgba(45,212,191,.25)}
+.b-shr{background:rgba(251,191,36,.15);color:var(--amb);border:1px solid rgba(251,191,36,.25);animation:bl 2s infinite}
+
+.tbody{flex:1;position:relative;overflow:hidden}
+.tbody video,.tbody canvas{width:100%;height:100%;object-fit:cover;display:block}
+#local-canvas{transform:scaleX(-1);display:none}
+#remote-video{display:none}
+#screen-preview{display:none;width:100%;height:100%;object-fit:contain;background:#000}
+
+.tempty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;background:var(--bg2)}
+.tei{width:48px;height:48px;border-radius:12px;background:var(--bg3);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center}
+.tet{font-size:12px;color:var(--t3);text-align:center;max-width:180px;line-height:1.6}
+
+.muted-ico{position:absolute;bottom:10px;left:10px;z-index:3;width:28px;height:28px;
+  border-radius:50%;background:rgba(248,113,113,.9);display:none;align-items:center;justify-content:center}
+.muted-ico.show{display:flex}
+
+#tap-play{display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  padding:8px 18px;border-radius:20px;border:1px solid rgba(45,212,191,.3);
+  background:var(--adim);color:var(--ac);font-family:var(--fu);font-size:12px;font-weight:700;
+  cursor:pointer;z-index:5;white-space:nowrap}
+
+/* SIDE PANEL */
+.spanel{width:var(--pw);min-width:var(--pw);background:var(--bg1);border-left:1px solid var(--bd);
+  display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;overflow:hidden}
+.spanel.open{transform:translateX(0)}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+  border-bottom:1px solid var(--bd);flex-shrink:0}
+.ph-title{font-size:13px;font-weight:700}
+.ph-x{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:var(--bg3);
+  color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:background .13s}
+.ph-x:hover{background:var(--bg4)}
+
+/* CHAT */
+#chat-panel{display:flex;flex-direction:column;flex:1;min-height:0}
+.cmsg-wrap{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.cmsg{display:flex;flex-direction:column;gap:3px}
+.cmsg.me{align-items:flex-end}.cmsg.them{align-items:flex-start}
+.cbubble{max-width:82%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.cmsg.me .cbubble{background:var(--adim);border:1px solid rgba(45,212,191,.2);border-bottom-right-radius:3px}
+.cmsg.them .cbubble{background:var(--bg3);border:1px solid var(--bd);border-bottom-left-radius:3px}
+.cmeta{font-size:10px;color:var(--t3);font-family:var(--fm)}
+.cinput-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--bd);flex-shrink:0}
+.cinput{flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg0);
+  color:var(--t1);font-family:var(--fu);font-size:13px;outline:none;transition:border-color .13s}
+.cinput::placeholder{color:var(--t3)}
+.cinput:focus{border-color:var(--ac)}
+.csend{width:38px;height:38px;border-radius:10px;border:0;background:var(--ac);color:#022c22;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;
+  transition:opacity .13s;flex-shrink:0}
+.csend:hover{opacity:.85}
+.cempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;color:var(--t3);font-size:12px;text-align:center}
+
+/* MEMBERS */
+#members-panel{flex-direction:column;flex:1;min-height:0;display:none}
+.mlist{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+.mcard{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  background:var(--bg2);border:1px solid var(--bd)}
+.mavatar{width:36px;height:36px;border-radius:50%;background:var(--bg4);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;font-family:var(--fb);font-size:14px;
+  font-weight:700;color:var(--ac);flex-shrink:0}
+.minfo{flex:1;min-width:0}
+.mname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mid{font-family:var(--fm);font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.micons{display:flex;gap:5px;flex-shrink:0}
+.mi{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;background:var(--bg4)}
+.mi.off{background:var(--rdim)}
+
+/* TOOLBAR */
+.toolbar{height:var(--tbh);min-height:var(--tbh);background:var(--bg1);border-top:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;gap:4px;padding:0 16px;flex-shrink:0}
+.tsep{width:1px;height:36px;background:var(--bd);margin:0 6px;flex-shrink:0}
+.ctl{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:0 3px;min-width:58px}
+.cbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--bd);background:var(--bg3);
+  color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .13s;position:relative;flex-shrink:0}
+.cbtn:hover{background:var(--bg4);border-color:var(--bdh)}
+.cbtn.muted{background:var(--rdim);border-color:rgba(248,113,113,.3);color:var(--red)}
+.cbtn.active{background:var(--adim);border-color:rgba(45,212,191,.3);color:var(--ac)}
+.cbtn.sharing{background:var(--amdim);border-color:rgba(251,191,36,.3);color:var(--amb);animation:bl 2s infinite}
+.cbtn.end-btn{background:var(--rdim);border-color:rgba(248,113,113,.3);color:var(--red);
+  min-width:76px;border-radius:22px;width:auto;padding:0 14px;gap:6px;font-size:13px;font-weight:700}
+.cbtn.end-btn:hover{background:rgba(248,113,113,.22)}
+.clbl{font-size:10px;font-weight:600;color:var(--t3);white-space:nowrap}
+.cbadge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:8px;background:var(--red);font-family:var(--fm);font-size:9px;font-weight:700;
+  color:#fff;display:none;align-items:center;justify-content:center}
+.cbadge.on{display:flex}
+
+/* OVERLAYS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);
+  align-items:center;justify-content:center;z-index:9000;padding:20px}
+.overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--bdh);border-radius:18px;width:100%;
+  animation:fup .2s ease}
+@keyframes fup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.mhd{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--bd)}
+.mtitle{font-family:var(--fb);font-size:18px;font-weight:700;letter-spacing:.03em}
+.mx{width:30px;height:30px;border-radius:8px;border:1px solid var(--bd);background:var(--bg3);
+  color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:background .13s}
+.mx:hover{background:var(--bg4)}
+.mbody{padding:16px 20px;display:flex;flex-direction:column;gap:14px;
+  max-height:80vh;overflow-y:auto}
+.msec{display:flex;flex-direction:column;gap:8px}
+.msec-ttl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
+.mrow{display:flex;flex-direction:column;gap:4px}
+.mlbl{font-size:11px;font-weight:600;color:var(--t2)}
+.msel,.minp{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--bd);
+  background:var(--bg0);color:var(--t1);font-family:var(--fu);font-size:13px;outline:none;
+  transition:border-color .13s;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233d4e72' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+.msel:focus,.minp:focus{border-color:var(--ac)}
+.minp{background-image:none;padding-right:11px;letter-spacing:.1em;font-family:var(--fm)}
+.mbtn{padding:9px 14px;border-radius:9px;border:1px solid var(--bd);background:var(--bg3);
+  color:var(--t1);cursor:pointer;font-family:var(--fu);font-size:13px;font-weight:600;
+  transition:all .13s;text-align:center;width:100%}
+.mbtn:hover{background:var(--bg4);border-color:var(--bdh)}
+.mbtn.ac{background:var(--adim);border-color:rgba(45,212,191,.25);color:var(--ac)}
+.mbtn.ac:hover{background:var(--aglow)}
+.mr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mfx{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mchip{padding:9px 4px 7px;border-radius:9px;border:1px solid var(--bd);background:var(--bg3);
+  cursor:pointer;text-align:center;transition:all .13s;display:flex;flex-direction:column;
+  align-items:center;gap:4px}
+.mchip:hover{background:var(--bg4);border-color:var(--bdh)}
+.mchip.on{background:var(--adim);border-color:rgba(45,212,191,.3)}
+.mchip .ci{font-size:17px}.mchip .cn{font-size:9px;font-weight:700;color:var(--t2)}
+.mchip.on .cn{color:var(--ac)}
+.pin-bar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+  background:var(--bg3);border:1px solid var(--bd);font-size:12px;color:var(--t2)}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:all .3s}
+.pdot.on{background:var(--ac);box-shadow:0 0 6px var(--ac)}
+
+/* SHARE */
+.sbox{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:10px;
+  background:var(--bg0);border:1px solid var(--bd)}
+.stext{flex:1;font-family:var(--fm);font-size:11px;color:var(--ac);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.cpbtn{padding:5px 12px;border-radius:7px;border:0;background:var(--adim);color:var(--ac);
+  cursor:pointer;font-family:var(--fu);font-size:12px;font-weight:700;white-space:nowrap;transition:background .13s}
+.cpbtn:hover{background:var(--aglow)}
+.pin-disp{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
+  border-radius:10px;background:var(--amdim);border:1px solid rgba(251,191,36,.2)}
+.pd-lbl{font-size:11px;color:var(--t2)}
+.pd-val{font-family:var(--fm);font-size:18px;font-weight:700;letter-spacing:.25em;color:var(--amb)}
+
+/* INCOMING / JOIN */
+.cring{width:60px;height:60px;border-radius:50%;background:var(--adim);border:2px solid rgba(45,212,191,.3);
+  display:flex;align-items:center;justify-content:center;font-size:24px;animation:bl 1s infinite}
+.ctitle{font-family:var(--fb);font-size:20px;font-weight:700;letter-spacing:.03em}
+.cpeer{font-family:var(--fm);font-size:11px;color:var(--t2);word-break:break-all}
+.cpinnote{font-size:11px;color:var(--amb);background:var(--amdim);border:1px solid rgba(251,191,36,.2);
+  padding:6px 12px;border-radius:8px;width:100%;text-align:center}
+.jbtns{display:flex;gap:10px;width:100%}
+.jbtn{flex:1;padding:11px 0;border-radius:10px;border:0;cursor:pointer;font-family:var(--fu);
+  font-size:13px;font-weight:700;transition:opacity .13s}
+.jbtn:hover{opacity:.85}
+.jbtn.ok{background:var(--ac);color:#022c22}
+.jbtn.no{background:var(--bg4);color:var(--t2)}
+.jbtn.bad{background:var(--rdim);color:var(--red)}
+.pin-row{display:flex;gap:8px;justify-content:center}
+.pdig{width:52px;height:58px;text-align:center;border-radius:10px;border:1px solid var(--bd);
+  background:var(--bg0);color:var(--t1);font-family:var(--fm);font-size:22px;font-weight:700;
+  outline:none;transition:border-color .13s;caret-color:var(--ac)}
+.pdig:focus{border-color:var(--ac)}
+.hidden{display:none!important}
+
+@media(max-width:700px){
+  .vstage{flex-direction:column;padding:8px;gap:8px}
+  .vtile{max-height:45%}
+  .clbl{display:none}.ctl{min-width:44px}.toolbar{gap:2px}
+}
+</style>
 </head>
 <body>
+<div class="app">
 
-<!-- ══ SIDEBAR ══════════════════════════════════════════ -->
-<aside class="sidebar">
-  <div class="brand-block">
-    <div class="brand-name">Strive<em>-Ops</em></div>
-    <div class="brand-sub">Live Ops Coaching</div>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-brand">Strive<em>-Ops</em></div>
+  <div class="tb-sep"></div>
+  <div class="tb-sname" id="sname-display">Coaching Session</div>
+  <div class="tb-pin hidden" id="pin-badge">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    PIN Protected
   </div>
+  <div class="tb-sep"></div>
+  <div class="tb-timer" id="sess-timer">00:00</div>
+  <div class="tb-sp"></div>
+  <div class="tb-status" id="status-el">Initializing…</div>
+  <div class="tb-dot" id="sdot"></div>
+</div>
 
-  <!-- Session ID -->
-  <div class="session-card">
-    <div class="session-card-top">
-      <div class="status-dot" id="status-dot"></div>
-      <div class="session-label">My Session ID</div>
-    </div>
-    <div class="session-id placeholder" id="my-id">Connecting…</div>
-  </div>
-
-  <!-- Connect to peer -->
-  <div class="connect-area">
-    <input class="s-input" id="remote-id-input" placeholder="Paste peer ID to connect…" />
-    <button class="s-btn accent" id="connect-btn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      <span>Connect</span>
-    </button>
-  </div>
-
-  <div class="sb-divider"></div>
-
-  <!-- Camera controls -->
-  <button class="s-btn accent" id="start-camera-btn" style="margin:0 12px 6px;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M20.94 11A8.994 8.994 0 0012 4a8.994 8.994 0 00-8.94 7M12 20a8.994 8.994 0 008.94-7"/></svg>
-    <span>Start Camera</span>
-  </button>
-
-  <button class="s-btn" id="copy-id-btn" style="margin:0 12px 6px;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-    <span>Copy My ID</span>
-  </button>
-
-  <button class="s-btn" id="share-link-btn" style="margin:0 12px 6px;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
-    <span>Share Join Link</span>
-  </button>
-
-  <button class="s-btn danger" id="hangup-btn" style="margin:0 12px 6px;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.37 19.79 19.79 0 01.36 .74 2 2 0 012.36 0H5a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6 7.91a16 16 0 006.68 5.4z"/></svg>
-    <span>Hang Up</span>
-  </button>
-
-  <div class="sb-divider"></div>
-  <div class="sb-section-label">Coaching Tools</div>
-
-  <div class="action-grid">
-    <div class="action-tile" id="tile-record" onclick="toggleRecord()">
-      <div class="action-tile-icon">⏺</div>
-      <div class="action-tile-label">Record</div>
-    </div>
-    <div class="action-tile" onclick="markTimestamp()">
-      <div class="action-tile-icon">📌</div>
-      <div class="action-tile-label">Timestamp</div>
-    </div>
-    <div class="action-tile" onclick="setStatus('Notes panel — coming in Milestone C.')">
-      <div class="action-tile-icon">📝</div>
-      <div class="action-tile-label">Notes</div>
-    </div>
-    <div class="action-tile" onclick="setStatus('Clip export — coming in Milestone C.')">
-      <div class="action-tile-icon">✂️</div>
-      <div class="action-tile-label">Export Clip</div>
-    </div>
-  </div>
-
-  <div class="sidebar-footer">v2.1 · Milestone B</div>
-</aside>
-
-<!-- ══ MAIN STAGE ═══════════════════════════════════════ -->
-<main class="stage">
-
-  <div class="topbar">
-    <div class="topbar-pill">
-      <div class="dot"></div>COACHING SESSION
-    </div>
-    <div class="topbar-status" id="status">Ready — start camera or connect to a peer.</div>
-    <div class="conn-badge" id="conn-badge">
-      <div class="conn-dot"></div>Idle
-    </div>
-  </div>
-
-  <div class="video-grid">
+<!-- MIDDLE -->
+<div class="middle">
+  <div class="vstage" id="vstage">
 
     <!-- LOCAL -->
-    <div class="video-tile">
-      <div class="tile-header">
-        <div class="tile-label">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
-          Local Preview
-        </div>
-        <div class="tile-badge offline" id="local-badge">OFFLINE</div>
+    <div class="vtile" id="tile-local">
+      <div class="th">
+        <div class="tname">You</div>
+        <div class="tbadge b-off" id="local-badge">OFFLINE</div>
       </div>
-      <div class="tile-body">
+      <div class="tbody">
         <canvas id="local-canvas"></canvas>
-        <div class="tile-empty" id="local-empty">
-          <div class="tile-empty-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          </div>
-          <div class="tile-empty-text">Click <strong style="color:#7a8cb0">Start Camera</strong><br>to begin local preview</div>
+        <div class="tempty" id="local-empty">
+          <div class="tei"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+          <div class="tet">Click <strong style="color:#8494b8">Camera</strong> in the toolbar to begin</div>
+        </div>
+        <div class="muted-ico" id="local-mico">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23M12 19v4M8 23h8"/></svg>
         </div>
       </div>
-      <div class="tile-controls">
-        <div class="tc-group">
-          <button class="tc-btn" id="mute-mic-btn" title="Mute/Unmute Mic">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
-          </button>
-        </div>
-        <div class="tc-group">
-          <button class="tc-btn" title="No Effect" onclick="setEffect('none')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>
-          </button>
-          <button class="tc-btn" title="Blur Background" onclick="setEffect('blur')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="12" stroke-dasharray="3 2"/></svg>
-          </button>
-          <button class="tc-btn" title="Remove Background" onclick="setEffect('solid')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M9 9h6v6H9z" fill="currentColor"/></svg>
-          </button>
-          <button class="tc-btn" title="Custom Background" onclick="setEffect('image')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          </button>
-        </div>
+    </div>
+
+    <!-- SCREEN SHARE TILE -->
+    <div class="vtile hidden" id="tile-screen">
+      <div class="th">
+        <div class="tname">Screen Share</div>
+        <div class="tbadge b-shr">SHARING</div>
+      </div>
+      <div class="tbody">
+        <video id="screen-preview" autoplay muted playsinline></video>
       </div>
     </div>
 
     <!-- REMOTE -->
-    <div class="video-tile">
-      <div class="tile-header">
-        <div class="tile-label">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-          Remote Feed
-        </div>
-        <div class="tile-badge wait" id="remote-badge">NO SIGNAL</div>
+    <div class="vtile" id="tile-remote">
+      <div class="th">
+        <div class="tname" id="remote-tname">Remote Peer</div>
+        <div class="tbadge b-off" id="remote-badge">NO SIGNAL</div>
       </div>
-      <div class="tile-body">
+      <div class="tbody">
         <video id="remote-video" autoplay playsinline></video>
-        <div class="tile-empty" id="remote-empty">
-          <div class="tile-empty-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.43 9.37a19.79 19.79 0 01-3.07-8.63A2 2 0 012.36 0H5a2 2 0 012 1.72"/><path d="M23 23L1 1"/></svg>
-          </div>
-          <div class="tile-empty-text">Waiting for peer to connect…</div>
+        <div class="tempty" id="remote-empty">
+          <div class="tei"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.37a19.79 19.79 0 01-3.07-8.63A2 2 0 012.36 0H5a2 2 0 012 1.72"/><path d="M23 23L1 1"/></svg></div>
+          <div class="tet">Waiting for peer…</div>
         </div>
-        <button id="tap-play-btn">▶ Tap to Start Playback</button>
-      </div>
-      <div class="tile-controls">
-        <div class="tc-group">
-          <button class="tc-btn" id="mute-remote-btn" title="Mute/Unmute Remote Audio">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
-          </button>
-        </div>
+        <div class="muted-ico" id="remote-mico"></div>
+        <button id="tap-play">▶ Tap to Start Playback</button>
       </div>
     </div>
 
-  </div>
-</main>
+  </div><!-- /vstage -->
 
-<!-- ══ RIGHT PANEL ══════════════════════════════════════ -->
-<aside class="right-panel">
-
-  <!-- ACTIVE DEVICES STATUS -->
-  <div class="rp-section">
-    <div class="rp-head">Active Devices</div>
-    <div class="rp-body">
-      <div class="device-status-row">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t3)"><circle cx="12" cy="12" r="3"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        <span id="active-cam-name" class="ds-none">No camera</span>
-      </div>
-      <div class="device-status-row">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t3)"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>
-        <span id="active-mic-name" class="ds-none">No microphone</span>
-      </div>
+  <!-- SIDE PANEL -->
+  <div class="spanel" id="spanel">
+    <div class="ph">
+      <div class="ph-title" id="panel-title">Chat</div>
+      <button class="ph-x" onclick="closePanel()">×</button>
     </div>
-  </div>
-
-  <!-- CAMERA SWITCH -->
-  <div class="rp-section">
-    <div class="rp-head">
-      Camera
-      <button class="rp-btn" style="width:auto;padding:3px 9px;font-size:10px;" id="refresh-devices-btn" title="Refresh device list">↻ Refresh</button>
-    </div>
-    <div class="rp-body">
-      <div class="rp-row">
-        <select id="camera-select" class="rp-select">
-          <option value="">Start camera to list devices</option>
-        </select>
-      </div>
-      <button class="rp-btn accent" id="switch-camera-btn">Switch Camera</button>
-    </div>
-  </div>
-
-  <!-- MIC SWITCH -->
-  <div class="rp-section">
-    <div class="rp-head">Microphone</div>
-    <div class="rp-body">
-      <div class="rp-row">
-        <select id="mic-select" class="rp-select">
-          <option value="">Start camera to list devices</option>
-        </select>
-      </div>
-      <div class="rp-row">
-        <div class="rp-label">Audio Profile</div>
-        <select id="audio-profile-select" class="rp-select">
-          <option value="standard">Standard (noise cancel ON)</option>
-          <option value="voice">Voice Focus (max clarity)</option>
-          <option value="raw">Raw (no processing)</option>
-        </select>
-      </div>
-      <button class="rp-btn accent" id="switch-mic-btn">Switch Microphone</button>
-    </div>
-  </div>
-
-  <!-- SPEAKER -->
-  <div class="rp-section">
-    <div class="rp-head">Speaker Output</div>
-    <div class="rp-body">
-      <div class="rp-row">
-        <select id="speaker-select" class="rp-select">
-          <option value="">Default System Speaker</option>
-        </select>
-      </div>
-      <button class="rp-btn" id="apply-speaker-btn">Apply Speaker</button>
-    </div>
-  </div>
-
-  <!-- VIDEO EFFECTS -->
-  <div class="rp-section">
-    <div class="rp-head">Background Effect</div>
-    <div class="rp-body">
-      <div class="effect-grid">
-        <div class="effect-chip on" id="eff-none" onclick="setEffect('none')">
-          <div class="ei">🚫</div><div class="en">None</div>
-        </div>
-        <div class="effect-chip" id="eff-blur" onclick="setEffect('blur')">
-          <div class="ei">🌫️</div><div class="en">Blur</div>
-        </div>
-        <div class="effect-chip" id="eff-solid" onclick="setEffect('solid')">
-          <div class="ei">⬛</div><div class="en">Remove</div>
-        </div>
-        <div class="effect-chip" id="eff-image" onclick="setEffect('image')">
-          <div class="ei">🖼️</div><div class="en">Custom</div>
+    <div id="chat-panel">
+      <div class="cmsg-wrap" id="cmsg-wrap">
+        <div class="cempty" id="cempty">
+          <span style="font-size:28px">💬</span>
+          Messages are sent over your direct peer connection.
         </div>
       </div>
-      <button class="rp-btn" id="upload-bg-btn">Upload Background Image</button>
-      <input id="bg-upload-input" type="file" accept="image/*" class="hidden" />
+      <div class="cinput-row">
+        <input class="cinput" id="cinput" placeholder="Type a message… (Enter to send)" maxlength="500"/>
+        <button class="csend" id="csend">↑</button>
+      </div>
+    </div>
+    <div id="members-panel">
+      <div class="mlist" id="mlist"></div>
     </div>
   </div>
+</div><!-- /middle -->
 
-</aside>
-
-<!-- ══ INCOMING CALL MODAL ══════════════════════════════ -->
-<div id="incoming-overlay">
-  <div class="modal">
-    <div class="modal-ring">📞</div>
-    <div class="modal-title">Incoming Session</div>
-    <div class="modal-peer" id="caller-id">unknown</div>
-    <div class="modal-btns">
-      <button class="modal-btn accept" id="accept-btn">Accept</button>
-      <button class="modal-btn decline" id="decline-btn">Decline</button>
-    </div>
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="ctl">
+    <button class="cbtn" id="btn-mic" onclick="toggleMic()" title="Mute/Unmute">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+    </button>
+    <span class="clbl" id="lbl-mic">Mute</span>
+  </div>
+  <div class="ctl">
+    <button class="cbtn" id="btn-cam" onclick="toggleCamera()" title="Camera On/Off">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    </button>
+    <span class="clbl" id="lbl-cam">Camera</span>
+  </div>
+  <div class="ctl">
+    <button class="cbtn" id="btn-share" onclick="toggleScreen()" title="Share Screen">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </button>
+    <span class="clbl" id="lbl-share">Share</span>
+  </div>
+  <div class="tsep"></div>
+  <div class="ctl">
+    <button class="cbtn" id="btn-chat" onclick="togglePanel('chat')" title="Chat">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <div class="cbadge" id="chat-badge">0</div>
+    </button>
+    <span class="clbl">Chat</span>
+  </div>
+  <div class="ctl">
+    <button class="cbtn" id="btn-members" onclick="togglePanel('members')" title="Members">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      <div class="cbadge on" id="members-badge">1</div>
+    </button>
+    <span class="clbl">Members</span>
+  </div>
+  <div class="ctl">
+    <button class="cbtn" id="btn-invite" onclick="openShare()" title="Invite">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+    </button>
+    <span class="clbl">Invite</span>
+  </div>
+  <div class="tsep"></div>
+  <div class="ctl">
+    <button class="cbtn" id="btn-settings" onclick="OV('settings-ov')" title="Settings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </button>
+    <span class="clbl">Settings</span>
+  </div>
+  <div class="ctl">
+    <button class="cbtn end-btn" onclick="hangUp()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.37a19.79 19.79 0 01-3.07-8.63A2 2 0 012.36 0H5a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6 7.91a16 16 0 006.68 5.4z"/></svg>
+      End
+    </button>
+    <span class="clbl">End</span>
   </div>
 </div>
 
-<!-- Hidden processing -->
+</div><!-- /app -->
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settings-ov">
+<div class="modal" style="max-width:460px">
+  <div class="mhd"><div class="mtitle">⚙️ Settings</div><button class="mx" onclick="CO('settings-ov')">×</button></div>
+  <div class="mbody">
+    <div class="msec">
+      <div class="msec-ttl">Session</div>
+      <div class="mrow"><div class="mlbl">Display Name</div>
+        <input class="minp" id="sname-in" placeholder="e.g. Coaching — John Doe" style="font-family:var(--fu);letter-spacing:0"/>
+      </div>
+      <button class="mbtn ac" onclick="applyName()">Apply Name</button>
+    </div>
+    <div class="msec">
+      <div class="msec-ttl">🔒 Security</div>
+      <div class="pin-bar"><div class="pdot" id="pdot"></div><span id="pstatus">No PIN — anyone with your link can join</span></div>
+      <div class="mrow"><div class="mlbl">Session PIN (4–6 digits)</div>
+        <input class="minp" id="pin-in" type="password" maxlength="6" placeholder="Enter PIN…" inputmode="numeric"/>
+      </div>
+      <div class="mr2">
+        <button class="mbtn ac" onclick="applyPin()">Set PIN</button>
+        <button class="mbtn" onclick="clearPin()">Clear PIN</button>
+      </div>
+    </div>
+    <div class="msec">
+      <div class="msec-ttl">📷 Camera</div>
+      <div class="mrow"><div class="mlbl">Active Camera</div>
+        <select id="cam-sel" class="msel"><option>Start camera to detect devices</option></select>
+      </div>
+      <div class="mr2">
+        <button class="mbtn ac" onclick="switchCam()">Switch Camera</button>
+        <button class="mbtn" onclick="refreshDev()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="msec">
+      <div class="msec-ttl">🎤 Microphone</div>
+      <div class="mrow"><div class="mlbl">Active Microphone</div>
+        <select id="mic-sel" class="msel"><option>Start camera to detect devices</option></select>
+      </div>
+      <div class="mrow"><div class="mlbl">Audio Profile</div>
+        <select id="aprof-sel" class="msel">
+          <option value="standard">Standard — noise cancel on</option>
+          <option value="voice">Voice Focus — max clarity</option>
+          <option value="raw">Raw — no processing</option>
+        </select>
+      </div>
+      <button class="mbtn ac" onclick="switchMic()">Switch Microphone</button>
+    </div>
+    <div class="msec">
+      <div class="msec-ttl">🔊 Speaker</div>
+      <div class="mrow"><select id="spk-sel" class="msel"><option value="">Default System Speaker</option></select></div>
+      <button class="mbtn" onclick="applySpeaker()">Apply Speaker</button>
+    </div>
+    <div class="msec">
+      <div class="msec-ttl">✨ Background Effect</div>
+      <div class="mfx">
+        <div class="mchip on" id="eff-none" onclick="setFX('none')"><div class="ci">🚫</div><div class="cn">None</div></div>
+        <div class="mchip" id="eff-blur" onclick="setFX('blur')"><div class="ci">🌫️</div><div class="cn">Blur</div></div>
+        <div class="mchip" id="eff-solid" onclick="setFX('solid')"><div class="ci">⬛</div><div class="cn">Remove</div></div>
+        <div class="mchip" id="eff-image" onclick="setFX('image')"><div class="ci">🖼️</div><div class="cn">Custom</div></div>
+      </div>
+      <button class="mbtn" onclick="G('bg-file').click()">Upload Background Image</button>
+      <input id="bg-file" type="file" accept="image/*" class="hidden"/>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SHARE / INVITE MODAL -->
+<div class="overlay" id="share-ov">
+<div class="modal" style="max-width:420px">
+  <div class="mhd"><div class="mtitle">🔗 Invite to Session</div><button class="mx" onclick="CO('share-ov')">×</button></div>
+  <div class="mbody">
+    <div class="msec">
+      <div class="msec-ttl">Your Session ID</div>
+      <div class="sbox"><div class="stext" id="sh-id">—</div><button class="cpbtn" onclick="cpText('sh-id')">Copy ID</button></div>
+    </div>
+    <div class="msec">
+      <div class="msec-ttl">Join Link</div>
+      <div class="sbox"><div class="stext" id="sh-link">—</div><button class="cpbtn" onclick="cpText('sh-link')">Copy Link</button></div>
+    </div>
+    <div id="sh-pin-row" class="msec hidden">
+      <div class="msec-ttl">Session PIN — share with your client</div>
+      <div class="pin-disp"><span class="pd-lbl">Current PIN:</span><span class="pd-val" id="sh-pin-val">—</span></div>
+    </div>
+    <div class="msec">
+      <div class="msec-ttl">Connect to a Peer</div>
+      <div class="mrow"><div class="mlbl">Paste Remote Session ID</div>
+        <input class="minp" id="remote-id-in" placeholder="so-xxxxxx" style="font-family:var(--fm);letter-spacing:.1em"/>
+      </div>
+      <button class="mbtn ac" onclick="connectToPeer()">Connect</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- INCOMING CALL -->
+<div class="overlay" id="incoming-ov">
+<div class="modal" style="max-width:320px">
+  <div class="mbody" style="align-items:center;text-align:center;gap:12px;padding:28px 24px">
+    <div class="cring">📞</div>
+    <div class="ctitle">Incoming Session</div>
+    <div class="cpeer" id="caller-display">unknown</div>
+    <div class="cpinnote hidden" id="pin-warn">⚠️ Session is PIN-protected — verify your client's PIN</div>
+    <div class="jbtns">
+      <button class="jbtn ok" onclick="acceptCall()">Accept</button>
+      <button class="jbtn bad" onclick="declineCall()">Decline</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PIN ENTRY (for joiners) -->
+<div class="overlay" id="joinpin-ov">
+<div class="modal" style="max-width:340px">
+  <div class="mbody" style="align-items:center;text-align:center;gap:16px;padding:28px 24px">
+    <div style="font-size:36px">🔒</div>
+    <div class="mtitle">Enter Session PIN</div>
+    <div style="font-size:12px;color:var(--t2)">Your coach has secured this session with a PIN. Enter it below to join.</div>
+    <div class="pin-row">
+      <input class="pdig" id="p0" maxlength="1" type="password" inputmode="numeric"/>
+      <input class="pdig" id="p1" maxlength="1" type="password" inputmode="numeric"/>
+      <input class="pdig" id="p2" maxlength="1" type="password" inputmode="numeric"/>
+      <input class="pdig" id="p3" maxlength="1" type="password" inputmode="numeric"/>
+    </div>
+    <div class="jbtns">
+      <button class="jbtn ok" onclick="submitPin()">Join</button>
+      <button class="jbtn no" onclick="CO('joinpin-ov')">Cancel</button>
+    </div>
+  </div>
+</div>
+</div>
+
 <video id="raw-video" autoplay muted playsinline class="hidden"></video>
 <canvas id="bg-canvas" class="hidden"></canvas>
 
 <script>
-// ════════════════════════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════════════════════════
-let peer = null;
-let localStream     = null;   // raw getUserMedia stream
-let outboundStream  = null;   // canvas + audio → what we send
-let currentCall     = null;
-let pendingCall     = null;
-let pendingRemote   = null;
-let audioProfile    = "standard";
-let videoEffect     = "none";
-let customBG        = null;
-let segmentation    = null;
-let pipelineActive  = false;
-let canvasStream    = null;
-let isRecording     = false;
-let timestamps      = [];
+// ═══ STATE ═══════════════════════════════════════════════════
+let peer=null,localStream=null,outbound=null,currentCall=null;
+let pendingCall=null,pendingRemote=null,dataConn=null;
+let seg=null,canStream=null,pipeOn=false;
+let fx="none",customBG=null,aprof="standard";
+let sPin="",micMuted=false,camOff=false;
+let sharing=false,screenStream=null;
+let activePanel=null,unread=0;
+let timerInt=null,pendingConnId=null;
 
-// ════════════════════════════════════════════════════════════════
-//  ELEMENT REFS
-// ════════════════════════════════════════════════════════════════
-const $ = id => document.getElementById(id);
+const G=id=>document.getElementById(id);
 
-const statusEl      = $("status");
-const statusDot     = $("status-dot");
-const connBadge     = $("conn-badge");
-const myIdEl        = $("my-id");
-const remoteInput   = $("remote-id-input");
-
-const localCanvas   = $("local-canvas");
-const localCtx      = localCanvas.getContext("2d");
-const rawVideo      = $("raw-video");
-const bgCanvas      = $("bg-canvas");
-const bgCtx         = bgCanvas.getContext("2d");
-const remoteVideo   = $("remote-video");
-
-const localEmpty    = $("local-empty");
-const remoteEmpty   = $("remote-empty");
-const localBadge    = $("local-badge");
-const remoteBadge   = $("remote-badge");
-
-const activeCamName = $("active-cam-name");
-const activeMicName = $("active-mic-name");
-
-const cameraSelect  = $("camera-select");
-const micSelect     = $("mic-select");
-const speakerSelect = $("speaker-select");
-const audioProfile$ = $("audio-profile-select");
-const tapPlayBtn    = $("tap-play-btn");
-const bgInput       = $("bg-upload-input");
-
-// ════════════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════════════
-window.addEventListener("load", () => {
-  bindEvents();
+// ═══ INIT ════════════════════════════════════════════════════
+window.addEventListener("load",()=>{
+  G("csend").addEventListener("click",sendChat);
+  G("cinput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}});
+  G("bg-file").addEventListener("change",handleBG);
+  ["p0","p1","p2","p3"].forEach((id,i)=>{
+    G(id).addEventListener("input",e=>{if(e.target.value&&i<3)G(["p0","p1","p2","p3"][i+1]).focus();});
+  });
   createPeer();
-  preloadJoinId();
-  initSegmentation();
-  setStatus("Platform ready — start camera or connect to a peer.");
+  initSeg();
+  loadURL();
+  updateMembers();
+  st("Platform ready.");
 });
 
-function bindEvents() {
-  $("start-camera-btn").addEventListener("click", startCamera);
-  $("copy-id-btn").addEventListener("click", copyId);
-  $("share-link-btn").addEventListener("click", shareLink);
-  $("connect-btn").addEventListener("click", connectToPeer);
-  $("hangup-btn").addEventListener("click", hangUp);
-  $("accept-btn").addEventListener("click", acceptCall);
-  $("decline-btn").addEventListener("click", declineCall);
-  $("mute-mic-btn").addEventListener("click", toggleMic);
-  $("mute-remote-btn").addEventListener("click", toggleRemoteMute);
-  $("switch-camera-btn").addEventListener("click", switchCamera);
-  $("switch-mic-btn").addEventListener("click", switchMic);
-  $("apply-speaker-btn").addEventListener("click", applySpeaker);
-  $("refresh-devices-btn").addEventListener("click", refreshDevices);
-  $("upload-bg-btn").addEventListener("click", () => bgInput.click());
-  bgInput.addEventListener("change", handleBGUpload);
-  tapPlayBtn.addEventListener("click", forcePlay);
+// ═══ HELPERS ═════════════════════════════════════════════════
+function st(m){G("status-el").textContent=m;}
+function dot(s){G("sdot").className="tb-dot"+(s?" "+s:"");}
+function OV(id){G(id).classList.add("show");}
+function CO(id){G(id).classList.remove("show");}
+function openShare(){
+  const id=G("sdot").dataset.id||"";
+  G("sh-id").textContent=id||"Not ready";
+  G("sh-link").textContent=id?`${location.origin}${location.pathname}?join=${id}`:"Not ready";
+  const pr=G("sh-pin-row");
+  if(sPin){pr.classList.remove("hidden");G("sh-pin-val").textContent=sPin;}
+  else pr.classList.add("hidden");
+  OV("share-ov");
+}
+function showLocal(v){
+  G("local-canvas").style.display=v?"block":"none";
+  G("local-empty").style.display=v?"none":"flex";
+  G("local-badge").textContent=v?"LIVE":"OFFLINE";
+  G("local-badge").className="tbadge "+(v?"b-live":"b-off");
+}
+function showRemote(v){
+  G("remote-video").style.display=v?"block":"none";
+  G("remote-empty").style.display=v?"none":"flex";
+  G("remote-badge").textContent=v?"CONNECTED":"NO SIGNAL";
+  G("remote-badge").className="tbadge "+(v?"b-conn":"b-off");
+  if(v){dot("live");}else{dot(localStream?"on":"");}
 }
 
-// ════════════════════════════════════════════════════════════════
-//  UI HELPERS
-// ════════════════════════════════════════════════════════════════
-function setStatus(msg) { statusEl.textContent = msg; }
-
-function setDot(state) {
-  statusDot.className = "status-dot" + (state ? " " + state : "");
+// ═══ TIMER ═══════════════════════════════════════════════════
+function startTimer(){
+  if(timerInt)return;
+  const t0=Date.now();
+  timerInt=setInterval(()=>{
+    const s=Math.floor((Date.now()-t0)/1000);
+    G("sess-timer").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+  },1000);
 }
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}G("sess-timer").textContent="00:00";}
 
-function setConnBadge(state, label) {
-  connBadge.className = "conn-badge" + (state ? " " + state : "");
-  connBadge.innerHTML = `<div class="conn-dot"></div>${label}`;
-}
-
-function showLocal(show) {
-  localCanvas.style.display = show ? "block" : "none";
-  localEmpty.style.display  = show ? "none"  : "flex";
-  localBadge.textContent    = show ? "LIVE"  : "OFFLINE";
-  localBadge.className      = "tile-badge " + (show ? "live" : "offline");
-}
-
-function showRemote(show) {
-  remoteVideo.style.display = show ? "block" : "none";
-  remoteEmpty.style.display = show ? "none"  : "flex";
-  remoteBadge.textContent   = show ? "CONNECTED" : "NO SIGNAL";
-  remoteBadge.className     = "tile-badge " + (show ? "conn" : "wait");
-  if (show) { setConnBadge("live", "Live"); setDot("live"); }
-  else       { setConnBadge("", "Idle");   if (localStream) setDot("online"); }
-}
-
-function showTapPlay(show) {
-  tapPlayBtn.style.display = show ? "inline-block" : "none";
-}
-
-function showModal(show) {
-  $("incoming-overlay").style.display = show ? "flex" : "none";
-  if (show) setDot("ringing");
-}
-
-// ════════════════════════════════════════════════════════════════
-//  PEER SETUP
-// ════════════════════════════════════════════════════════════════
-function createPeer() {
-  const id = "so-" + Math.random().toString(36).slice(2, 9);
-  peer = new Peer(id, { host: "0.peerjs.com", port: 443, secure: true });
-
-  peer.on("open", val => {
-    myIdEl.textContent = val;
-    myIdEl.classList.remove("placeholder");
-    setDot("online");
-    setStatus("Session ready — ID: " + val);
+// ═══ PEER ════════════════════════════════════════════════════
+function createPeer(){
+  const id="so-"+Math.random().toString(36).slice(2,9);
+  peer=new Peer(id,{host:"0.peerjs.com",port:443,secure:true});
+  peer.on("open",v=>{
+    G("sdot").dataset.id=v;dot("on");
+    st("Ready — ID: "+v);updateMembers();
   });
-
-  peer.on("call", incoming => {
-    pendingCall = incoming;
-    $("caller-id").textContent = incoming.peer;
-    showModal(true);
-    setStatus("Incoming session request from " + incoming.peer);
+  peer.on("call",inc=>{
+    pendingCall=inc;
+    G("caller-display").textContent=inc.peer;
+    const pinWarn=G("pin-warn");
+    if(sPin)pinWarn.classList.remove("hidden"); else pinWarn.classList.add("hidden");
+    OV("incoming-ov");dot("ring");
+    st("Incoming session from "+inc.peer);
   });
-
-  peer.on("error", err => {
-    console.error(err);
-    setStatus("Peer error: " + (err.type || "unknown"));
-    setDot("");
+  peer.on("connection",conn=>{
+    dataConn=conn;
+    conn.on("data",rxData);
+    conn.on("open",()=>updateMembers());
+    conn.on("close",()=>{dataConn=null;updateMembers();});
   });
+  peer.on("error",e=>{console.error(e);st("Peer error: "+(e.type||"?"));dot("");});
 }
 
-// ════════════════════════════════════════════════════════════════
-//  SEGMENTATION
-// ════════════════════════════════════════════════════════════════
-function initSegmentation() {
-  segmentation = new SelfieSegmentation({
-    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
-  });
-  segmentation.setOptions({ modelSelection: 1 });
-  segmentation.onResults(onSegResult);
+// ═══ SEGMENTATION ════════════════════════════════════════════
+function initSeg(){
+  seg=new SelfieSegmentation({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`});
+  seg.setOptions({modelSelection:1});
+  seg.onResults(onSeg);
 }
 
-// ════════════════════════════════════════════════════════════════
-//  CAMERA / MIC START
-// ════════════════════════════════════════════════════════════════
-async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: audioConstraints(audioProfile)
+// ═══ CAMERA ══════════════════════════════════════════════════
+async function startCamera(){
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:true,audio:aC(aprof)});
+    await applyStream(s);
+    await loadDevs();
+    st("Camera started.");
+    camOff=false;
+    G("btn-cam").classList.remove("muted");
+    G("lbl-cam").textContent="Camera";
+  }catch(e){console.error(e);st("Camera error: "+e.message);alert("Camera/mic access denied.");}
+}
+
+async function applyStream(s){
+  stopTracks();localStream=s;
+  const rv=G("raw-video");rv.srcObject=s;rv.muted=true;
+  await rv.play().catch(()=>{});
+  await buildPipe();
+  showLocal(true);updateMembers();updateMicUI();
+}
+
+async function buildPipe(){
+  const vt=localStream.getVideoTracks()[0];
+  const ss=vt?.getSettings()||{};
+  const w=ss.width||1280,h=ss.height||720;
+  const lc=G("local-canvas"),bc=G("bg-canvas");
+  lc.width=w;lc.height=h;bc.width=w;bc.height=h;
+  if(canStream)canStream.getTracks().forEach(t=>t.stop());
+  canStream=lc.captureStream(25);
+  rebuildOut();
+  if(!pipeOn){pipeOn=true;loop();}
+}
+
+function rebuildOut(){
+  if(!canStream)return;
+  const vid=canStream.getVideoTracks()[0];
+  const aud=localStream?.getAudioTracks()[0]||null;
+  outbound=new MediaStream();
+  if(vid)outbound.addTrack(vid);
+  if(aud)outbound.addTrack(aud);
+  replaceSnd();
+}
+
+async function replaceSnd(){
+  if(!currentCall?.peerConnection||!outbound)return;
+  const snds=currentCall.peerConnection.getSenders();
+  const nv=outbound.getVideoTracks()[0],na=outbound.getAudioTracks()[0];
+  const vs=snds.find(s=>s.track?.kind==="video"),as=snds.find(s=>s.track?.kind==="audio");
+  try{if(vs&&nv)await vs.replaceTrack(nv);if(as&&na)await as.replaceTrack(na);}
+  catch(e){console.error(e);}
+}
+
+async function loop(){
+  if(!pipeOn)return;
+  const rv=G("raw-video");
+  if(rv.readyState>=2&&seg&&!sharing){try{await seg.send({image:rv});}catch(e){}}
+  requestAnimationFrame(loop);
+}
+
+function onSeg(r){
+  const lc=G("local-canvas"),ctx=lc.getContext("2d"),w=lc.width,h=lc.height;
+  ctx.save();ctx.clearRect(0,0,w,h);
+  if(fx==="none"){ctx.drawImage(r.image,0,0,w,h);}
+  else if(fx==="blur"){
+    ctx.drawImage(r.segmentationMask,0,0,w,h);
+    ctx.globalCompositeOperation="source-out";ctx.filter="blur(15px)";
+    ctx.drawImage(r.image,0,0,w,h);
+    ctx.globalCompositeOperation="destination-atop";ctx.filter="none";
+    ctx.drawImage(r.image,0,0,w,h);
+  }else if(fx==="solid"){
+    ctx.fillStyle="#080c1a";ctx.fillRect(0,0,w,h);
+    ctx.globalCompositeOperation="destination-out";ctx.drawImage(r.segmentationMask,0,0,w,h);
+    ctx.globalCompositeOperation="destination-over";ctx.drawImage(r.image,0,0,w,h);
+  }else if(fx==="image"){
+    if(customBG)ctx.drawImage(customBG,0,0,w,h);
+    else{ctx.fillStyle="#1e3a8a";ctx.fillRect(0,0,w,h);}
+    ctx.globalCompositeOperation="destination-out";ctx.drawImage(r.segmentationMask,0,0,w,h);
+    ctx.globalCompositeOperation="destination-over";ctx.drawImage(r.image,0,0,w,h);
+  }else{ctx.drawImage(r.image,0,0,w,h);}
+  ctx.restore();
+}
+
+// ═══ SCREEN SHARE ════════════════════════════════════════════
+async function toggleScreen(){
+  if(!localStream){st("Start your camera before sharing screen.");return;}
+  if(sharing){stopScreen();return;}
+  try{
+    screenStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{cursor:"always"},audio:false
     });
-    applyStream(stream);
-    await loadDevices();
-    setStatus("Camera started.");
-  } catch (err) {
-    console.error(err);
-    setStatus("Could not access camera: " + err.message);
-    alert("Camera/mic access denied or unavailable.");
+    const sT=screenStream.getVideoTracks()[0];
+    // Show in tile
+    const sp=G("screen-preview");sp.srcObject=screenStream;sp.style.display="block";
+    G("tile-screen").classList.remove("hidden");
+    G("vstage").classList.add("sharing");
+    // Replace sender track
+    if(currentCall?.peerConnection){
+      const snd=currentCall.peerConnection.getSenders().find(s=>s.track?.kind==="video");
+      if(snd)await snd.replaceTrack(sT);
+    }
+    sharing=true;
+    G("btn-share").classList.add("sharing");
+    G("lbl-share").textContent="Stop Share";
+    sT.addEventListener("ended",stopScreen);
+    st("Screen sharing — your screen is visible to the remote peer.");
+  }catch(e){
+    if(e.name!=="NotAllowedError"){console.error(e);st("Screen share error: "+e.message);}
+    else st("Screen share cancelled.");
   }
 }
 
-// Core: wire a new raw stream into the pipeline
-async function applyStream(stream) {
-  stopLocalTracks();
-  localStream = stream;
-
-  rawVideo.srcObject = stream;
-  rawVideo.muted = true;
-  rawVideo.playsInline = true;
-  await rawVideo.play().catch(() => {});
-
-  await buildPipeline();
-  showLocal(true);
-  updateActiveBadges();
-  updateMicBtn();
+async function stopScreen(){
+  if(!sharing)return;
+  screenStream?.getTracks().forEach(t=>t.stop());
+  screenStream=null;
+  const sp=G("screen-preview");sp.srcObject=null;sp.style.display="none";
+  G("tile-screen").classList.add("hidden");
+  G("vstage").classList.remove("sharing");
+  // Restore canvas track
+  if(currentCall?.peerConnection&&canStream){
+    const snd=currentCall.peerConnection.getSenders().find(s=>s.track?.kind==="video");
+    if(snd)await snd.replaceTrack(canStream.getVideoTracks()[0]).catch(()=>{});
+  }
+  sharing=false;
+  G("btn-share").classList.remove("sharing");
+  G("lbl-share").textContent="Share";
+  st("Screen sharing stopped.");
 }
 
-async function buildPipeline() {
-  const vt = localStream.getVideoTracks()[0];
-  const s  = vt?.getSettings() || {};
-  const w  = s.width  || 1280;
-  const h  = s.height || 720;
+// ═══ MIC / CAM TOGGLE ════════════════════════════════════════
+async function toggleCamera(){
+  if(!localStream){await startCamera();return;}
+  camOff=!camOff;
+  localStream.getVideoTracks().forEach(t=>t.enabled=!camOff);
+  G("btn-cam").classList.toggle("muted",camOff);
+  G("lbl-cam").textContent=camOff?"Start Cam":"Camera";
+  showLocal(!camOff);
+  st(camOff?"Camera paused.":"Camera on.");
+}
 
-  localCanvas.width  = w;
-  localCanvas.height = h;
-  bgCanvas.width     = w;
-  bgCanvas.height    = h;
+function toggleMic(){
+  if(!localStream){st("Start camera first.");return;}
+  const t=localStream.getAudioTracks()[0];
+  if(!t){st("No microphone track.");return;}
+  micMuted=!micMuted;t.enabled=!micMuted;
+  updateMicUI();
+  G("local-mico").classList.toggle("show",micMuted);
+  st(micMuted?"Microphone muted.":"Microphone unmuted.");
+}
 
-  if (canvasStream) canvasStream.getTracks().forEach(t => t.stop());
-  canvasStream = localCanvas.captureStream(25);
+function updateMicUI(){
+  const t=localStream?.getAudioTracks()[0];
+  const m=t?!t.enabled:false;
+  G("btn-mic").classList.toggle("muted",m);
+  G("lbl-mic").textContent=m?"Unmute":"Mute";
+}
 
-  rebuildOutbound();
-
-  if (!pipelineActive) {
-    pipelineActive = true;
-    frameLoop();
+// ═══ DEVICES ═════════════════════════════════════════════════
+async function loadDevs(){
+  const d=await navigator.mediaDevices.enumerateDevices().catch(()=>[]);
+  fillS(G("cam-sel"),d.filter(x=>x.kind==="videoinput"),"Camera");
+  fillS(G("mic-sel"),d.filter(x=>x.kind==="audioinput"),"Microphone");
+  fillS(G("spk-sel"),d.filter(x=>x.kind==="audiooutput"),"Speaker",true);
+  if(localStream){
+    const vs=localStream.getVideoTracks()[0]?.getSettings();
+    const as=localStream.getAudioTracks()[0]?.getSettings();
+    if(vs?.deviceId)G("cam-sel").value=vs.deviceId;
+    if(as?.deviceId)G("mic-sel").value=as.deviceId;
   }
 }
 
-function rebuildOutbound() {
-  if (!canvasStream) return;
-  const vid   = canvasStream.getVideoTracks()[0];
-  const audio = localStream?.getAudioTracks()[0] || null;
-
-  outboundStream = new MediaStream();
-  if (vid)   outboundStream.addTrack(vid);
-  if (audio) outboundStream.addTrack(audio);
-
-  replaceSenders();
+function fillS(sel,devs,lbl,addDef=false){
+  sel.innerHTML="";
+  if(addDef)sel.add(new Option("Default System "+lbl,""));
+  if(!devs.length){sel.add(new Option("No "+lbl+" found",""));return;}
+  devs.forEach((d,i)=>sel.add(new Option(d.label||lbl+" "+(i+1),d.deviceId)));
 }
 
-async function replaceSenders() {
-  if (!currentCall?.peerConnection || !outboundStream) return;
-  const senders   = currentCall.peerConnection.getSenders();
-  const newVid    = outboundStream.getVideoTracks()[0];
-  const newAud    = outboundStream.getAudioTracks()[0];
-  const vidSender = senders.find(s => s.track?.kind === "video");
-  const audSender = senders.find(s => s.track?.kind === "audio");
-  try {
-    if (vidSender && newVid) await vidSender.replaceTrack(newVid);
-    if (audSender && newAud) await audSender.replaceTrack(newAud);
-    setStatus("Device switch applied to live session.");
-  } catch (e) { console.error("replaceSenders:", e); }
+async function refreshDev(){
+  if(!localStream){st("Start camera to detect devices.");return;}
+  await loadDevs();st("Devices refreshed.");
 }
 
-async function frameLoop() {
-  if (!pipelineActive) return;
-  if (rawVideo.readyState >= 2 && segmentation) {
-    try { await segmentation.send({ image: rawVideo }); } catch (e) {}
+async function switchCam(){
+  if(!localStream){st("Start camera first.");return;}
+  const id=G("cam-sel").value;if(!id){st("Select a camera.");return;}
+  const cur=localStream.getVideoTracks()[0]?.getSettings()?.deviceId;
+  if(id===cur){st("Already using that camera.");return;}
+  st("Switching camera…");
+  try{
+    const ns=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:id}},audio:false});
+    const nt=ns.getVideoTracks()[0];
+    localStream.getVideoTracks().forEach(t=>{t.stop();localStream.removeTrack(t);});
+    localStream.addTrack(nt);
+    const rv=G("raw-video");rv.srcObject=null;rv.srcObject=localStream;
+    await rv.play().catch(()=>{});
+    await buildPipe();showLocal(true);
+    st("Camera switched: "+(nt.label||id));
+  }catch(e){st("Camera switch failed: "+e.message);}
+}
+
+async function switchMic(){
+  if(!localStream){st("Start camera first.");return;}
+  const id=G("mic-sel").value;if(!id){st("Select a mic.");return;}
+  const prof=G("aprof-sel").value;
+  st("Switching microphone…");
+  try{
+    const ns=await navigator.mediaDevices.getUserMedia({video:false,audio:aC(prof,id)});
+    const nt=ns.getAudioTracks()[0];
+    localStream.getAudioTracks().forEach(t=>{t.stop();localStream.removeTrack(t);});
+    localStream.addTrack(nt);
+    rebuildOut();updateMicUI();
+    st("Mic switched: "+(nt.label||id));
+  }catch(e){st("Mic switch failed: "+e.message);}
+}
+
+async function applySpeaker(){
+  const rv=G("remote-video");
+  if(typeof rv.setSinkId!=="function"){st("Speaker switching not supported in this browser.");return;}
+  try{await rv.setSinkId(G("spk-sel").value||"");st("Speaker updated.");}
+  catch(e){st("Speaker error: "+e.message);}
+}
+
+function aC(p,id=null){
+  const b=id?{deviceId:{exact:id}}:{};
+  if(p==="voice")return{...b,echoCancellation:true,noiseSuppression:true,autoGainControl:true};
+  if(p==="raw")return{...b,echoCancellation:false,noiseSuppression:false,autoGainControl:false};
+  return{...b,echoCancellation:true,noiseSuppression:true,autoGainControl:true};
+}
+
+// ═══ EFFECTS ═════════════════════════════════════════════════
+function setFX(m){
+  if(m==="image"&&!customBG){G("bg-file").click();return;}
+  fx=m;
+  ["none","blur","solid","image"].forEach(k=>G("eff-"+k).classList.toggle("on",k===m));
+  st("Effect: "+m);
+}
+function handleBG(e){
+  const f=e.target.files?.[0];if(!f)return;
+  const url=URL.createObjectURL(f);
+  const img=new Image();
+  img.onload=()=>{customBG=img;setFX("image");st("Background loaded.");URL.revokeObjectURL(url);};
+  img.src=url;
+}
+
+// ═══ CALL FLOW ═══════════════════════════════════════════════
+function connectToPeer(){
+  CO("share-ov");
+  const rid=G("remote-id-in").value.trim();
+  if(!rid){alert("Enter a remote Session ID.");return;}
+  if(!peer){alert("Not ready yet.");return;}
+  // Check if PIN required (URL param)
+  const urlPin=new URLSearchParams(location.search).get("pin");
+  if(urlPin){
+    pendingConnId=rid;
+    prefPin(urlPin);OV("joinpin-ov");return;
   }
-  requestAnimationFrame(frameLoop);
+  doConnect(rid,"");
 }
 
-function onSegResult(res) {
-  const w = localCanvas.width, h = localCanvas.height;
-  localCtx.save();
-  localCtx.clearRect(0, 0, w, h);
-
-  if (videoEffect === "none") {
-    localCtx.drawImage(res.image, 0, 0, w, h);
-  } else if (videoEffect === "blur") {
-    localCtx.drawImage(res.segmentationMask, 0, 0, w, h);
-    localCtx.globalCompositeOperation = "source-out";
-    localCtx.filter = "blur(15px)";
-    localCtx.drawImage(res.image, 0, 0, w, h);
-    localCtx.globalCompositeOperation = "destination-atop";
-    localCtx.filter = "none";
-    localCtx.drawImage(res.image, 0, 0, w, h);
-  } else if (videoEffect === "solid") {
-    localCtx.fillStyle = "#0a0e1a";
-    localCtx.fillRect(0, 0, w, h);
-    localCtx.globalCompositeOperation = "destination-out";
-    localCtx.drawImage(res.segmentationMask, 0, 0, w, h);
-    localCtx.globalCompositeOperation = "destination-over";
-    localCtx.drawImage(res.image, 0, 0, w, h);
-  } else if (videoEffect === "image") {
-    if (customBG) localCtx.drawImage(customBG, 0, 0, w, h);
-    else { localCtx.fillStyle = "#1e3a8a"; localCtx.fillRect(0, 0, w, h); }
-    localCtx.globalCompositeOperation = "destination-out";
-    localCtx.drawImage(res.segmentationMask, 0, 0, w, h);
-    localCtx.globalCompositeOperation = "destination-over";
-    localCtx.drawImage(res.image, 0, 0, w, h);
-  } else {
-    localCtx.drawImage(res.image, 0, 0, w, h);
-  }
-  localCtx.restore();
+function prefPin(pin){
+  const d=pin.split("").slice(0,4);
+  ["p0","p1","p2","p3"].forEach((id,i)=>{G(id).value=d[i]||"";});
 }
 
-// ════════════════════════════════════════════════════════════════
-//  DEVICE SWITCHING  ← main focus area
-// ════════════════════════════════════════════════════════════════
-
-// Load all available devices into selects
-async function loadDevices() {
-  // Must be called after getUserMedia to get labeled devices
-  let devices;
-  try { devices = await navigator.mediaDevices.enumerateDevices(); }
-  catch (e) { setStatus("Could not enumerate devices."); return; }
-
-  const cams     = devices.filter(d => d.kind === "videoinput");
-  const mics     = devices.filter(d => d.kind === "audioinput");
-  const speakers = devices.filter(d => d.kind === "audiooutput");
-
-  fillSelect(cameraSelect,  cams,     "Camera");
-  fillSelect(micSelect,     mics,     "Microphone");
-  fillSelect(speakerSelect, speakers, "Speaker", true);
-
-  // Pre-select currently active devices
-  if (localStream) {
-    const vs = localStream.getVideoTracks()[0]?.getSettings();
-    const as = localStream.getAudioTracks()[0]?.getSettings();
-    if (vs?.deviceId) cameraSelect.value = vs.deviceId;
-    if (as?.deviceId) micSelect.value    = as.deviceId;
-  }
+function submitPin(){
+  const pin=["p0","p1","p2","p3"].map(id=>G(id).value).join("").trim();
+  CO("joinpin-ov");
+  if(!pendingConnId)return;
+  doConnect(pendingConnId,pin);
+  pendingConnId=null;
 }
 
-function fillSelect(sel, devices, label, addDefault = false) {
-  sel.innerHTML = "";
-  if (addDefault) {
-    const o = document.createElement("option");
-    o.value = ""; o.textContent = "Default System " + label;
-    sel.appendChild(o);
-  }
-  if (!devices.length) {
-    const o = document.createElement("option");
-    o.value = ""; o.textContent = "No " + label + " found";
-    sel.appendChild(o);
-    return;
-  }
-  devices.forEach((d, i) => {
-    const o = document.createElement("option");
-    o.value = d.deviceId;
-    o.textContent = d.label || `${label} ${i + 1}`;
-    sel.appendChild(o);
-  });
-}
-
-async function refreshDevices() {
-  if (!localStream) { setStatus("Start camera first to detect devices."); return; }
-  await loadDevices();
-  setStatus("Device list refreshed.");
-}
-
-// Switch camera only — keep existing mic track
-async function switchCamera() {
-  if (!localStream) { setStatus("Start camera before switching."); return; }
-  const camId = cameraSelect.value;
-  if (!camId) { setStatus("Select a camera first."); return; }
-
-  // Check if it's already the active camera
-  const currentCamId = localStream.getVideoTracks()[0]?.getSettings()?.deviceId;
-  if (camId === currentCamId) { setStatus("That camera is already active."); return; }
-
-  setStatus("Switching camera…");
-  try {
-    // Get new video track only
-    const newVidStream = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: { exact: camId } },
-      audio: false
-    });
-
-    // Stop old video track
-    localStream.getVideoTracks().forEach(t => t.stop());
-
-    // Replace in localStream
-    const newVidTrack = newVidStream.getVideoTracks()[0];
-    localStream.removeTrack(localStream.getVideoTracks()[0]);  // remove stale
-    localStream.addTrack(newVidTrack);
-
-    // Re-feed raw video
-    rawVideo.srcObject = null;
-    rawVideo.srcObject = localStream;
-    await rawVideo.play().catch(() => {});
-
-    // Rebuild canvas dimensions for new camera resolution
-    await buildPipeline();
-    showLocal(true);
-    updateActiveBadges();
-    setStatus("Camera switched: " + (newVidTrack.label || camId));
-  } catch (err) {
-    console.error(err);
-    setStatus("Camera switch failed: " + err.message);
-  }
-}
-
-// Switch mic only — keep existing video track
-async function switchMic() {
-  if (!localStream) { setStatus("Start camera before switching mic."); return; }
-  const micId = micSelect.value;
-  if (!micId) { setStatus("Select a microphone first."); return; }
-
-  const currentMicId = localStream.getAudioTracks()[0]?.getSettings()?.deviceId;
-  if (micId === currentMicId) { setStatus("That microphone is already active."); return; }
-
-  setStatus("Switching microphone…");
-  try {
-    const profile = audioProfile$.value;
-    const newAudStream = await navigator.mediaDevices.getUserMedia({
-      video: false,
-      audio: audioConstraints(profile, micId)
-    });
-
-    // Stop old audio track
-    localStream.getAudioTracks().forEach(t => t.stop());
-
-    const newAudTrack = newAudStream.getAudioTracks()[0];
-
-    // Remove old audio from localStream, add new
-    localStream.getAudioTracks().forEach(t => localStream.removeTrack(t));
-    localStream.addTrack(newAudTrack);
-
-    // Rebuild outbound with new audio
-    rebuildOutbound();
-    updateActiveBadges();
-    updateMicBtn();
-    setStatus("Microphone switched: " + (newAudTrack.label || micId));
-  } catch (err) {
-    console.error(err);
-    setStatus("Mic switch failed: " + err.message);
-  }
-}
-
-async function applySpeaker() {
-  const id = speakerSelect.value;
-  if (typeof remoteVideo.setSinkId !== "function") {
-    setStatus("Speaker switching not supported in this browser (Chrome recommended).");
-    return;
-  }
-  try {
-    await remoteVideo.setSinkId(id || "");
-    setStatus("Speaker output updated.");
-  } catch (err) { setStatus("Speaker switch failed: " + err.message); }
-}
-
-function updateActiveBadges() {
-  if (!localStream) {
-    activeCamName.textContent = "No camera";
-    activeCamName.className   = "ds-none";
-    activeMicName.textContent = "No microphone";
-    activeMicName.className   = "ds-none";
-    return;
-  }
-  const vt = localStream.getVideoTracks()[0];
-  const at = localStream.getAudioTracks()[0];
-  activeCamName.textContent = vt ? (vt.label || "Camera active") : "No camera";
-  activeCamName.className   = vt ? "ds-name" : "ds-none";
-  activeMicName.textContent = at ? (at.label || "Microphone active") : "No microphone";
-  activeMicName.className   = at ? "ds-name" : "ds-none";
-}
-
-// ════════════════════════════════════════════════════════════════
-//  AUDIO CONSTRAINTS
-// ════════════════════════════════════════════════════════════════
-function audioConstraints(profile, deviceId = null) {
-  const base = deviceId ? { deviceId: { exact: deviceId } } : {};
-  if (profile === "voice") return { ...base, echoCancellation: true,  noiseSuppression: true,  autoGainControl: true  };
-  if (profile === "raw")   return { ...base, echoCancellation: false, noiseSuppression: false, autoGainControl: false };
-  return                          { ...base, echoCancellation: true,  noiseSuppression: true,  autoGainControl: true  };
-}
-
-// ════════════════════════════════════════════════════════════════
-//  EFFECTS
-// ════════════════════════════════════════════════════════════════
-function setEffect(mode) {
-  if (mode === "image" && !customBG) {
-    bgInput.click();
-    return;
-  }
-  videoEffect = mode;
-  ["none","blur","solid","image"].forEach(k => {
-    $("eff-" + k).classList.toggle("on", k === mode);
-  });
-  setStatus("Effect: " + mode);
-}
-
-function handleBGUpload(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    customBG = img;
-    setEffect("image");
-    setStatus("Custom background loaded.");
-    URL.revokeObjectURL(url);
-  };
-  img.src = url;
-}
-
-// ════════════════════════════════════════════════════════════════
-//  CALL FLOW
-// ════════════════════════════════════════════════════════════════
-function connectToPeer() {
-  const id = remoteInput.value.trim();
-  if (!id)   { alert("Paste a remote Session ID first."); return; }
-  if (!peer) { alert("Peer not ready yet."); return; }
-  if (currentCall) { currentCall.close(); currentCall = null; }
-  setStatus("Connecting to " + id + "…");
-  setDot("ringing");
-  try {
-    currentCall = peer.call(id, outboundStream || undefined);
+function doConnect(rid,pin){
+  if(currentCall){currentCall.close();currentCall=null;}
+  st("Connecting to "+rid+"…");dot("ring");
+  // Data channel
+  try{
+    const dc=peer.connect(rid);
+    dc.on("open",()=>{dataConn=dc;updateMembers();});
+    dc.on("data",rxData);
+    dc.on("close",()=>{dataConn=null;updateMembers();});
+  }catch(e){console.warn("Data ch:",e);}
+  // Media
+  try{
+    currentCall=peer.call(rid,outbound||undefined,{metadata:{pin}});
     wireCall(currentCall);
-  } catch (e) { console.error(e); setStatus("Connection failed."); setDot("online"); }
+  }catch(e){console.error(e);st("Connection failed: "+e.message);dot("on");}
 }
 
-function acceptCall() {
-  if (!pendingCall) return;
-  if (currentCall) { currentCall.close(); currentCall = null; }
-  currentCall = pendingCall;
-  pendingCall = null;
-  showModal(false);
-  currentCall.answer(outboundStream || undefined);
+function acceptCall(){
+  if(!pendingCall)return;
+  if(currentCall){currentCall.close();currentCall=null;}
+  currentCall=pendingCall;pendingCall=null;
+  CO("incoming-ov");
+  currentCall.answer(outbound||undefined);
   wireCall(currentCall);
-  setStatus("Session accepted.");
+  st("Session accepted.");
 }
 
-function declineCall() {
-  if (pendingCall) { pendingCall.close(); pendingCall = null; }
-  showModal(false);
-  setStatus("Session request declined.");
-  setDot("online");
+function declineCall(){
+  if(pendingCall){pendingCall.close();pendingCall=null;}
+  CO("incoming-ov");dot("on");st("Request declined.");
 }
 
-function wireCall(call) {
-  call.on("stream", remote => {
-    pendingRemote = remote;
-    attachRemote(remote);
+function wireCall(call){
+  call.on("stream",remote=>{
+    pendingRemote=remote;attachRemote(remote);startTimer();
+    G("remote-tname").textContent=call.peer.slice(0,14)+"…";
+    updateMembers();
   });
-  call.on("close", () => {
-    clearRemote();
-    showModal(false);
-    pendingCall = null;
-    setStatus("Session ended.");
-    if (localStream) setDot("online"); else setDot("");
+  call.on("close",()=>{
+    clearRemote();CO("incoming-ov");pendingCall=null;
+    stopTimer();updateMembers();
+    st("Session ended.");if(sharing)stopScreen();
+    dot(localStream?"on":"");
   });
-  call.on("error", e => { console.error(e); setStatus("Call error."); });
+  call.on("error",e=>{console.error(e);st("Call error: "+e.type);});
 }
 
-function attachRemote(stream) {
-  remoteVideo.srcObject  = stream;
-  remoteVideo.playsInline = true;
-  remoteVideo.muted      = false;
+function attachRemote(stream){
+  const rv=G("remote-video");rv.srcObject=stream;rv.playsInline=true;rv.muted=false;
   showRemote(true);
-  updateRemoteMuteBtn();
-  const p = remoteVideo.play();
-  if (p?.then) {
-    p.then(() => { showTapPlay(false); setStatus("Remote feed connected."); })
-     .catch(() => { showTapPlay(true); setStatus("Tap button to start remote playback."); });
-  } else { setStatus("Remote feed connected."); }
+  const p=rv.play();
+  if(p?.then)p.then(()=>{G("tap-play").style.display="none";st("Remote feed connected.")})
+    .catch(()=>{G("tap-play").style.display="block";st("Tap to start playback.");});
+  G("tap-play").onclick=()=>{rv.play().then(()=>{G("tap-play").style.display="none";});};
 }
 
-function forcePlay() {
-  if (pendingRemote && !remoteVideo.srcObject) remoteVideo.srcObject = pendingRemote;
-  remoteVideo.play()
-    .then(() => { showTapPlay(false); setStatus("Remote feed connected."); })
-    .catch(e  => { console.error(e); setStatus("Tap again to start playback."); });
+function clearRemote(){
+  G("remote-video").srcObject=null;pendingRemote=null;
+  showRemote(false);G("tap-play").style.display="none";
+  G("remote-tname").textContent="Remote Peer";
 }
 
-function clearRemote() {
-  remoteVideo.srcObject = null;
-  pendingRemote = null;
-  showRemote(false);
-  showTapPlay(false);
-  updateRemoteMuteBtn();
+function hangUp(){
+  if(pendingCall){pendingCall.close();pendingCall=null;}
+  if(currentCall){currentCall.close();currentCall=null;}
+  if(dataConn){dataConn.close();dataConn=null;}
+  if(sharing)stopScreen();
+  CO("incoming-ov");clearRemote();stopTimer();updateMembers();
+  dot(localStream?"on":"");st("Session ended.");
 }
 
-function hangUp() {
-  if (pendingCall)  { pendingCall.close();  pendingCall  = null; }
-  if (currentCall)  { currentCall.close();  currentCall  = null; }
-  showModal(false);
-  clearRemote();
-  if (localStream) setDot("online"); else setDot("");
-  setStatus("Session ended.");
+// ═══ CHAT ════════════════════════════════════════════════════
+function sendChat(){
+  const inp=G("cinput"),text=inp.value.trim();if(!text)return;
+  if(dataConn?.open)dataConn.send({type:"chat",text,from:"me",ts:Date.now()});
+  appendMsg({text,from:"me",ts:Date.now()});
+  inp.value="";
 }
 
-// ════════════════════════════════════════════════════════════════
-//  MIC / REMOTE MUTE
-// ════════════════════════════════════════════════════════════════
-function toggleMic() {
-  if (!localStream) { setStatus("Start camera first."); return; }
-  const t = localStream.getAudioTracks()[0];
-  if (!t) { setStatus("No microphone track."); return; }
-  t.enabled = !t.enabled;
-  updateMicBtn();
-  setStatus(t.enabled ? "Microphone unmuted." : "Microphone muted.");
+function rxData(d){
+  if(!d||d.type!=="chat")return;
+  appendMsg({text:d.text,from:"them",ts:d.ts||Date.now()});
+  if(activePanel!=="chat"){
+    unread++;
+    const b=G("chat-badge");b.textContent=unread;b.classList.add("on");
+  }
 }
 
-function updateMicBtn() {
-  const t   = localStream?.getAudioTracks()[0];
-  const muted = t ? !t.enabled : false;
-  $("mute-mic-btn").classList.toggle("muted", muted);
+function appendMsg(msg){
+  G("cempty").style.display="none";
+  const w=G("cmsg-wrap");
+  const d=document.createElement("div");
+  d.className="cmsg "+(msg.from==="me"?"me":"them");
+  const t=new Date(msg.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  d.innerHTML=`<div class="cbubble">${esc(msg.text)}</div><div class="cmeta">${t}</div>`;
+  w.appendChild(d);w.scrollTop=w.scrollHeight;
 }
 
-function toggleRemoteMute() {
-  remoteVideo.muted = !remoteVideo.muted;
-  updateRemoteMuteBtn();
-  setStatus(remoteVideo.muted ? "Remote audio muted." : "Remote audio unmuted.");
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+// ═══ PANELS ══════════════════════════════════════════════════
+function togglePanel(name){
+  if(activePanel===name){closePanel();return;}
+  activePanel=name;
+  G("spanel").classList.add("open");
+  G("panel-title").textContent=name==="chat"?"💬 Chat":"👥 Members";
+  G("chat-panel").style.display=name==="chat"?"flex":"none";
+  G("members-panel").style.display=name==="members"?"flex":"none";
+  G("btn-chat").classList.toggle("active",name==="chat");
+  G("btn-members").classList.toggle("active",name==="members");
+  if(name==="chat"){unread=0;G("chat-badge").classList.remove("on");setTimeout(()=>G("cinput").focus(),100);}
+  if(name==="members")updateMembers();
 }
 
-function updateRemoteMuteBtn() {
-  $("mute-remote-btn").classList.toggle("muted", remoteVideo.muted);
+function closePanel(){
+  activePanel=null;
+  G("spanel").classList.remove("open");
+  G("btn-chat").classList.remove("active");
+  G("btn-members").classList.remove("active");
 }
 
-// ════════════════════════════════════════════════════════════════
-//  ID / LINK UTILITIES
-// ════════════════════════════════════════════════════════════════
-async function copyId() {
-  const id = myIdEl.textContent;
-  if (!id || id === "Connecting…") return;
-  try { await navigator.clipboard.writeText(id); setStatus("Session ID copied."); }
-  catch { prompt("Copy your Session ID:", id); }
+function updateMembers(){
+  const myId=G("sdot").dataset.id||"Connecting…";
+  const rmId=currentCall?.peer||null;
+  G("members-badge").textContent=1+(rmId?1:0);
+  const mic=localStream?.getAudioTracks()[0]?.enabled!==false;
+  const cam=!!localStream&&localStream.getVideoTracks()[0]?.enabled!==false;
+  G("mlist").innerHTML=mCard(myId,"You",mic,cam)+( rmId?mCard(rmId,"Peer",true,true):"");
 }
 
-function shareLink() {
-  const id = myIdEl.textContent;
-  if (!id || id === "Connecting…") { setStatus("Session ID not ready yet."); return; }
-  const url = window.location.origin + window.location.pathname + "?join=" + id;
-  try { navigator.clipboard.writeText(url); setStatus("Join link copied to clipboard."); }
-  catch { prompt("Copy this link:", url); }
+function mCard(id,lbl,mic,cam){
+  return`<div class="mcard">
+    <div class="mavatar">${lbl.slice(0,2).toUpperCase()}</div>
+    <div class="minfo"><div class="mname">${lbl}</div><div class="mid">${id.slice(0,22)}</div></div>
+    <div class="micons">
+      <div class="mi${mic?"":" off"}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg></div>
+      <div class="mi${cam?"":" off"}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+    </div>
+  </div>`;
 }
 
-function preloadJoinId() {
-  const params = new URLSearchParams(window.location.search);
-  const join   = params.get("join");
-  if (join) remoteInput.value = join;
+// ═══ SESSION NAME & PIN ══════════════════════════════════════
+function applyName(){
+  const n=G("sname-in").value.trim();
+  if(n)G("sname-display").textContent=n;
+  st("Session name updated.");
 }
 
-// ════════════════════════════════════════════════════════════════
-//  COACHING TOOLS (stubs — Milestone C)
-// ════════════════════════════════════════════════════════════════
-function toggleRecord() {
-  isRecording = !isRecording;
-  const tile = $("tile-record");
-  tile.classList.toggle("active", isRecording);
-  tile.querySelector(".action-tile-label").textContent = isRecording ? "Stop" : "Record";
-  setStatus(isRecording ? "Recording started. (MediaRecorder integration in Milestone C)" : "Recording stopped.");
+function applyPin(){
+  const p=G("pin-in").value.trim();
+  if(!/^\d{4,6}$/.test(p)){st("PIN must be 4–6 digits.");return;}
+  sPin=p;
+  G("pdot").classList.add("on");
+  G("pstatus").textContent="PIN set — clients must enter this PIN to join";
+  G("pin-badge").classList.remove("hidden");
+  st("Session PIN set.");
 }
 
-function markTimestamp() {
-  const t = new Date().toLocaleTimeString();
-  timestamps.push(t);
-  setStatus(`Timestamp #${timestamps.length} marked at ${t}`);
+function clearPin(){
+  sPin="";G("pdot").classList.remove("on");
+  G("pstatus").textContent="No PIN — anyone with your link can join";
+  G("pin-in").value="";G("pin-badge").classList.add("hidden");
+  st("PIN cleared.");
 }
 
-function stopLocalTracks() {
-  if (localStream) localStream.getTracks().forEach(t => t.stop());
+// ═══ UTILS ═══════════════════════════════════════════════════
+async function cpText(elId){
+  const t=G(elId).textContent;
+  try{await navigator.clipboard.writeText(t);st("Copied to clipboard.");}
+  catch{prompt("Copy:",t);}
+}
+
+function stopTracks(){if(localStream)localStream.getTracks().forEach(t=>t.stop());}
+
+function loadURL(){
+  const p=new URLSearchParams(location.search);
+  const join=p.get("join");
+  if(join){
+    G("remote-id-in").value=join;
+    const pin=p.get("pin");
+    if(pin){
+      pendingConnId=join;prefPin(pin);
+      const wait=setInterval(()=>{
+        if(G("sdot").dataset.id){clearInterval(wait);OV("joinpin-ov");}
+      },300);
+    }
+    setTimeout(()=>OV("share-ov"),800);
+  }
 }
 </script>
 </body>
