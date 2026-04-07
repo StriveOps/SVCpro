@@ -3,323 +3,1695 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Strive-Ops | Milestone B</title>
-
+  <title>Strive-Ops · Live Ops Coaching</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --bg0: #050810;
+      --bg1: #090d1a;
+      --bg2: #0d1222;
+      --bg3: #13192e;
+      --bg4: #1b2340;
+      --border: rgba(255,255,255,0.065);
+      --border-hi: rgba(255,255,255,0.13);
+      --t1: #dde6ff;
+      --t2: #7a8cb0;
+      --t3: #3d4e72;
+      --accent: #2dd4bf;
+      --accent-dim: rgba(45,212,191,0.10);
+      --accent-glow: rgba(45,212,191,0.18);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.12);
+      --amber: #fbbf24;
+      --sidebar: 230px;
+      --panel: 268px;
+      --font-ui: 'Barlow', sans-serif;
+      --font-brand: 'Barlow Condensed', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
     }
 
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0a0f1c;
-      color: #f8fafc;
-      padding: 20px;
-    }
-
-    .app {
-      max-width: 1180px;
-      margin: 0 auto;
-    }
-
-    .header {
-      margin-bottom: 20px;
-    }
-
-    .title {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 6px;
-    }
-
-    .subtitle {
-      color: #94a3b8;
-      font-size: 14px;
-    }
-
-    .card {
-      background: #111827;
-      border: 1px solid #1f2937;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-
-    .label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #94a3b8;
-      margin-bottom: 8px;
-    }
-
-    .id-box {
-      color: #60a5fa;
-      font-weight: 700;
-      word-break: break-all;
-      font-size: 16px;
-    }
-
-    .controls {
+      font-family: var(--font-ui);
+      background: var(--bg0);
+      color: var(--t1);
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
     }
 
-    input,
-    select {
-      flex: 1 1 220px;
-      min-width: 220px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      border: 1px solid #334155;
-      background: #020617;
-      color: #f8fafc;
-      outline: none;
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+
+    /* ══════════════════════════════════════════
+       SIDEBAR
+    ══════════════════════════════════════════ */
+    .sidebar {
+      width: var(--sidebar);
+      min-width: var(--sidebar);
+      height: 100vh;
+      background: var(--bg1);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    button {
-      padding: 12px 16px;
-      border: 0;
-      border-radius: 10px;
-      color: white;
-      cursor: pointer;
+    .brand-block {
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-name {
+      font-family: var(--font-brand);
+      font-size: 22px;
       font-weight: 700;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      color: var(--t1);
     }
 
-    .btn-green { background: #16a34a; }
-    .btn-blue { background: #2563eb; }
-    .btn-red { background: #dc2626; }
-    .btn-gray { background: #334155; }
-    .btn-purple { background: #7c3aed; }
-
-    .status {
-      font-size: 14px;
-      color: #cbd5e1;
-      white-space: pre-line;
+    .brand-name em {
+      color: var(--accent);
+      font-style: normal;
     }
 
-    .videos {
+    .brand-sub {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--t3);
+      margin-top: 4px;
+    }
+
+    /* session ID card */
+    .session-card {
+      margin: 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px 13px;
+    }
+
+    .session-card-top {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 7px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--t3);
+      flex-shrink: 0;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .status-dot.online  { background: var(--accent); box-shadow: 0 0 7px var(--accent); }
+    .status-dot.ringing { background: var(--amber);  box-shadow: 0 0 7px var(--amber); animation: blink 0.8s infinite; }
+    .status-dot.live    { background: var(--red);    box-shadow: 0 0 7px var(--red); }
+
+    @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+
+    .session-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--t3);
+    }
+
+    .session-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .session-id.placeholder { color: var(--t3); font-style: italic; }
+
+    /* connect area */
+    .connect-area {
+      padding: 0 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .s-input {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg0);
+      color: var(--t1);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .s-input::placeholder { color: var(--t3); }
+    .s-input:focus { border-color: var(--accent); }
+
+    /* sidebar buttons */
+    .s-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      padding: 9px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--t1);
+      cursor: pointer;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.13s, border-color 0.13s;
+      text-align: left;
+    }
+
+    .s-btn:hover { background: var(--bg4); border-color: var(--border-hi); }
+
+    .s-btn.accent {
+      background: var(--accent-dim);
+      border-color: rgba(45,212,191,0.25);
+      color: var(--accent);
+    }
+
+    .s-btn.accent:hover { background: var(--accent-glow); }
+
+    .s-btn.danger {
+      background: var(--red-dim);
+      border-color: rgba(248,113,113,0.22);
+      color: var(--red);
+    }
+
+    .s-btn.danger:hover { background: rgba(248,113,113,0.18); }
+
+    .s-btn svg { flex-shrink: 0; opacity: 0.75; }
+
+    .sb-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 12px;
+    }
+
+    .sb-section-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--t3);
+      padding: 8px 13px 4px;
+    }
+
+    .action-grid {
+      padding: 0 12px 8px;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 6px;
     }
 
-    .video-card {
-      background: #111827;
-      border: 1px solid #1f2937;
-      border-radius: 16px;
-      padding: 12px;
+    .action-tile {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.13s, border-color 0.13s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
     }
 
-    .video-title {
-      font-size: 12px;
+    .action-tile:hover { background: var(--bg4); border-color: var(--border-hi); }
+    .action-tile.active { background: var(--accent-dim); border-color: rgba(45,212,191,0.25); }
+
+    .action-tile-icon { font-size: 16px; }
+    .action-tile-label { font-size: 10px; font-weight: 600; color: var(--t2); }
+    .action-tile.active .action-tile-label { color: var(--accent); }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 10px 13px;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--t3);
+    }
+
+    /* ══════════════════════════════════════════
+       MAIN STAGE
+    ══════════════════════════════════════════ */
+    .stage {
+      flex: 1;
+      min-width: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg0);
+    }
+
+    /* top bar */
+    .topbar {
+      height: 50px;
+      min-height: 50px;
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 18px;
+    }
+
+    .topbar-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 11px 4px 8px;
+      border-radius: 20px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(45,212,191,0.2);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+
+    .topbar-pill .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .topbar-status {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--t2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .conn-badge {
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--t3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .conn-badge .conn-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.45;
+    }
+
+    .conn-badge.live {
+      color: var(--red);
+      border-color: rgba(248,113,113,0.3);
+      background: var(--red-dim);
+    }
+
+    .conn-badge.live .conn-dot { opacity: 1; animation: blink 1s infinite; }
+
+    /* video grid */
+    .video-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 14px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .video-tile {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 13px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg1);
+      flex-shrink: 0;
+    }
+
+    .tile-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #94a3b8;
-      margin-bottom: 8px;
+      color: var(--t3);
+      display: flex;
+      align-items: center;
+      gap: 7px;
     }
 
-    video,
-    canvas {
+    .tile-badge {
+      font-size: 9px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.06em;
+    }
+
+    .tile-badge.offline { background: var(--bg4); color: var(--t3); border: 1px solid var(--border); }
+    .tile-badge.live    { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); animation: blink 2s infinite; }
+    .tile-badge.conn    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(45,212,191,0.25); }
+    .tile-badge.wait    { background: var(--bg3); color: var(--t3); border: 1px solid var(--border); }
+
+    .tile-body {
+      flex: 1;
+      position: relative;
+      background: #000;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .tile-body video,
+    .tile-body canvas {
       width: 100%;
-      min-height: 280px;
-      background: black;
-      border-radius: 12px;
+      height: 100%;
       object-fit: cover;
+      display: block;
     }
 
-    #local-canvas {
-      display: none;
-      transform: scaleX(-1);
+    #local-canvas { transform: scaleX(-1); display: none; }
+    #remote-video { display: none; }
+
+    .tile-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: var(--bg2);
     }
 
-    #remote-video {
-      display: none;
-    }
-
-    .placeholder {
-      min-height: 280px;
-      border-radius: 12px;
-      background: black;
-      color: #64748b;
+    .tile-empty-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 20px;
     }
+
+    .tile-empty-text {
+      font-size: 12px;
+      color: var(--t3);
+      text-align: center;
+      line-height: 1.6;
+      max-width: 200px;
+    }
+
+    /* bottom controls bar inside tile */
+    .tile-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      background: var(--bg1);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tc-group { display: flex; gap: 5px; align-items: center; }
+
+    .tc-btn {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--t2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.13s;
+      padding: 0;
+    }
+
+    .tc-btn:hover { background: var(--bg4); color: var(--t1); border-color: var(--border-hi); }
+    .tc-btn.muted { background: var(--red-dim); border-color: rgba(248,113,113,0.3); color: var(--red); }
+    .tc-btn.fx-on { background: var(--accent-dim); border-color: rgba(45,212,191,0.25); color: var(--accent); }
 
     #tap-play-btn {
       display: none;
-      width: 100%;
-      margin-top: 10px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(45,212,191,0.3);
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    #incoming-call {
+    /* ══════════════════════════════════════════
+       RIGHT PANEL
+    ══════════════════════════════════════════ */
+    .right-panel {
+      width: var(--panel);
+      min-width: var(--panel);
+      height: 100vh;
+      background: var(--bg1);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rp-section {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rp-head {
+      padding: 13px 15px 9px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--t3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .rp-body {
+      padding: 0 13px 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .rp-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .rp-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--t3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .rp-label .active-name {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--accent);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rp-select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg0);
+      color: var(--t1);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.13s;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233d4e72' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+
+    .rp-select:focus { border-color: var(--accent); }
+
+    .rp-btn {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--t1);
+      cursor: pointer;
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.13s, border-color 0.13s;
+      text-align: center;
+    }
+
+    .rp-btn:hover { background: var(--bg4); border-color: var(--border-hi); }
+
+    .rp-btn.accent {
+      background: var(--accent-dim);
+      border-color: rgba(45,212,191,0.25);
+      color: var(--accent);
+    }
+
+    .rp-btn.accent:hover { background: var(--accent-glow); }
+
+    .rp-row-inline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    /* Effect picker */
+    .effect-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .effect-chip {
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      cursor: pointer;
+      text-align: center;
+      padding: 8px 4px 6px;
+      transition: all 0.13s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .effect-chip:hover { background: var(--bg4); border-color: var(--border-hi); }
+
+    .effect-chip.on {
+      background: var(--accent-dim);
+      border-color: rgba(45,212,191,0.3);
+    }
+
+    .effect-chip .ei { font-size: 16px; }
+    .effect-chip .en { font-size: 9px; font-weight: 700; color: var(--t2); }
+    .effect-chip.on .en { color: var(--accent); }
+
+    /* Device status indicator row */
+    .device-status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--t2);
+    }
+
+    .device-status-row svg { flex-shrink: 0; }
+
+    .device-status-row .ds-name {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .device-status-row .ds-none {
+      color: var(--t3);
+      font-style: italic;
+    }
+
+    /* refresh devices hint */
+    .refresh-hint {
+      font-size: 10px;
+      color: var(--t3);
+      text-align: center;
+      padding: 2px 0;
+    }
+
+    /* ══════════════════════════════════════════
+       INCOMING CALL MODAL
+    ══════════════════════════════════════════ */
+    #incoming-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.78);
+      background: rgba(0,0,0,0.82);
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      padding: 20px;
     }
 
     .modal {
-      background: #111827;
-      border: 1px solid #1f2937;
-      border-radius: 16px;
-      max-width: 360px;
+      background: var(--bg2);
+      border: 1px solid var(--border-hi);
+      border-radius: 18px;
+      max-width: 330px;
       width: 100%;
-      padding: 20px;
+      padding: 28px 24px;
       text-align: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+
+    .modal-ring {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      border: 2px solid rgba(45,212,191,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 16px;
+      animation: blink 1s infinite;
     }
 
     .modal-title {
-      font-size: 18px;
+      font-family: var(--font-brand);
+      font-size: 20px;
       font-weight: 700;
-      margin-bottom: 10px;
+      letter-spacing: 0.03em;
+      margin-bottom: 6px;
     }
 
-    .modal-subtitle {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 18px;
+    .modal-peer {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--t2);
+      margin-bottom: 22px;
       word-break: break-all;
     }
 
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
+    .modal-btns { display: flex; gap: 10px; }
+
+    .modal-btn {
+      flex: 1;
+      padding: 11px 0;
+      border-radius: 10px;
+      border: 0;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 700;
+      transition: opacity 0.13s;
     }
 
-    .hidden-media {
-      display: none !important;
+    .modal-btn:hover { opacity: 0.85; }
+    .modal-btn.accept { background: var(--accent); color: #022c22; }
+    .modal-btn.decline { background: var(--bg4); color: var(--t2); }
+
+    /* ══════════════════════════════════════════
+       HIDDEN PROCESSING ELEMENTS
+    ══════════════════════════════════════════ */
+    .hidden { display: none !important; }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      :root { --panel: 0px; }
+      .right-panel { display: none; }
     }
 
-    @media (max-width: 800px) {
-      .videos {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 650px) {
+      :root { --sidebar: 52px; }
+      .brand-sub, .session-card, .connect-area,
+      .sb-section-label, .action-grid, .s-btn span,
+      .sidebar-footer { display: none; }
+      .brand-name { font-size: 14px; }
+      .video-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="header">
-      <div class="title">Strive-Ops</div>
-      <div class="subtitle">Milestone B — Camera effects and advanced media controls</div>
-    </div>
 
-    <div class="card">
-      <div class="label">My Session ID</div>
-      <div id="my-id" class="id-box">Connecting...</div>
-    </div>
+<!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="brand-block">
+    <div class="brand-name">Strive<em>-Ops</em></div>
+    <div class="brand-sub">Live Ops Coaching</div>
+  </div>
 
-    <div class="card">
-      <div class="controls">
-        <button id="start-camera-btn" class="btn-green">Start Camera</button>
-        <button id="copy-id-btn" class="btn-gray">Copy My ID</button>
-        <input id="remote-id-input" placeholder="Paste remote ID here" />
-        <button id="connect-btn" class="btn-blue">Connect</button>
-        <button id="hangup-btn" class="btn-red">Hang Up</button>
+  <!-- Session ID -->
+  <div class="session-card">
+    <div class="session-card-top">
+      <div class="status-dot" id="status-dot"></div>
+      <div class="session-label">My Session ID</div>
+    </div>
+    <div class="session-id placeholder" id="my-id">Connecting…</div>
+  </div>
+
+  <!-- Connect to peer -->
+  <div class="connect-area">
+    <input class="s-input" id="remote-id-input" placeholder="Paste peer ID to connect…" />
+    <button class="s-btn accent" id="connect-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      <span>Connect</span>
+    </button>
+  </div>
+
+  <div class="sb-divider"></div>
+
+  <!-- Camera controls -->
+  <button class="s-btn accent" id="start-camera-btn" style="margin:0 12px 6px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M20.94 11A8.994 8.994 0 0012 4a8.994 8.994 0 00-8.94 7M12 20a8.994 8.994 0 008.94-7"/></svg>
+    <span>Start Camera</span>
+  </button>
+
+  <button class="s-btn" id="copy-id-btn" style="margin:0 12px 6px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+    <span>Copy My ID</span>
+  </button>
+
+  <button class="s-btn" id="share-link-btn" style="margin:0 12px 6px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+    <span>Share Join Link</span>
+  </button>
+
+  <button class="s-btn danger" id="hangup-btn" style="margin:0 12px 6px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.37 19.79 19.79 0 01.36 .74 2 2 0 012.36 0H5a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6 7.91a16 16 0 006.68 5.4z"/></svg>
+    <span>Hang Up</span>
+  </button>
+
+  <div class="sb-divider"></div>
+  <div class="sb-section-label">Coaching Tools</div>
+
+  <div class="action-grid">
+    <div class="action-tile" id="tile-record" onclick="toggleRecord()">
+      <div class="action-tile-icon">⏺</div>
+      <div class="action-tile-label">Record</div>
+    </div>
+    <div class="action-tile" onclick="markTimestamp()">
+      <div class="action-tile-icon">📌</div>
+      <div class="action-tile-label">Timestamp</div>
+    </div>
+    <div class="action-tile" onclick="setStatus('Notes panel — coming in Milestone C.')">
+      <div class="action-tile-icon">📝</div>
+      <div class="action-tile-label">Notes</div>
+    </div>
+    <div class="action-tile" onclick="setStatus('Clip export — coming in Milestone C.')">
+      <div class="action-tile-icon">✂️</div>
+      <div class="action-tile-label">Export Clip</div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">v2.1 · Milestone B</div>
+</aside>
+
+<!-- ══ MAIN STAGE ═══════════════════════════════════════ -->
+<main class="stage">
+
+  <div class="topbar">
+    <div class="topbar-pill">
+      <div class="dot"></div>COACHING SESSION
+    </div>
+    <div class="topbar-status" id="status">Ready — start camera or connect to a peer.</div>
+    <div class="conn-badge" id="conn-badge">
+      <div class="conn-dot"></div>Idle
+    </div>
+  </div>
+
+  <div class="video-grid">
+
+    <!-- LOCAL -->
+    <div class="video-tile">
+      <div class="tile-header">
+        <div class="tile-label">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
+          Local Preview
+        </div>
+        <div class="tile-badge offline" id="local-badge">OFFLINE</div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="controls">
-        <select id="camera-select">
-          <option value="">Select Camera</option>
-        </select>
-        <select id="mic-select">
-          <option value="">Select Microphone</option>
-        </select>
-        <button id="apply-devices-btn" class="btn-blue">Apply Devices</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="controls">
-        <select id="speaker-select">
-          <option value="">Select Speaker / Output</option>
-        </select>
-        <button id="apply-speaker-btn" class="btn-blue">Apply Speaker</button>
-
-        <select id="audio-profile-select">
-          <option value="standard">Audio Profile: Standard</option>
-          <option value="voice">Audio Profile: Voice Focus</option>
-          <option value="raw">Audio Profile: Raw Audio</option>
-        </select>
-        <button id="apply-audio-profile-btn" class="btn-blue">Apply Audio Profile</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="controls">
-        <select id="effect-select">
-          <option value="none">Video Effect: None</option>
-          <option value="blur">Video Effect: Blur Background</option>
-          <option value="solid">Video Effect: Remove Background</option>
-          <option value="image">Video Effect: Custom Background</option>
-        </select>
-        <button id="apply-effect-btn" class="btn-purple">Apply Effect</button>
-        <button id="upload-bg-btn" class="btn-gray">Upload Background</button>
-        <input id="bg-upload-input" type="file" accept="image/*" class="hidden-media" />
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="controls">
-        <button id="mute-mic-btn" class="btn-gray">Mute Mic</button>
-        <button id="mute-remote-btn" class="btn-gray">Mute Remote Audio</button>
-      </div>
-    </div>
-
-    <div class="card status" id="status">
-      Ready. Start camera on one browser, then connect to it from the other browser.
-    </div>
-
-    <div class="videos">
-      <div class="video-card">
-        <div class="video-title">Local Preview</div>
+      <div class="tile-body">
         <canvas id="local-canvas"></canvas>
-        <div id="local-placeholder" class="placeholder">Your local processed preview will appear here.</div>
+        <div class="tile-empty" id="local-empty">
+          <div class="tile-empty-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </div>
+          <div class="tile-empty-text">Click <strong style="color:#7a8cb0">Start Camera</strong><br>to begin local preview</div>
+        </div>
       </div>
+      <div class="tile-controls">
+        <div class="tc-group">
+          <button class="tc-btn" id="mute-mic-btn" title="Mute/Unmute Mic">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+          </button>
+        </div>
+        <div class="tc-group">
+          <button class="tc-btn" title="No Effect" onclick="setEffect('none')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+          </button>
+          <button class="tc-btn" title="Blur Background" onclick="setEffect('blur')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="12" stroke-dasharray="3 2"/></svg>
+          </button>
+          <button class="tc-btn" title="Remove Background" onclick="setEffect('solid')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M9 9h6v6H9z" fill="currentColor"/></svg>
+          </button>
+          <button class="tc-btn" title="Custom Background" onclick="setEffect('image')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
 
-      <div class="video-card">
-        <div class="video-title">Remote Feed</div>
+    <!-- REMOTE -->
+    <div class="video-tile">
+      <div class="tile-header">
+        <div class="tile-label">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          Remote Feed
+        </div>
+        <div class="tile-badge wait" id="remote-badge">NO SIGNAL</div>
+      </div>
+      <div class="tile-body">
         <video id="remote-video" autoplay playsinline></video>
-        <div id="remote-placeholder" class="placeholder">The other browser’s video feed will appear here.</div>
-        <button id="tap-play-btn" class="btn-blue">Tap to Start Remote Video</button>
+        <div class="tile-empty" id="remote-empty">
+          <div class="tile-empty-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3d4e72" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.43 9.37a19.79 19.79 0 01-3.07-8.63A2 2 0 012.36 0H5a2 2 0 012 1.72"/><path d="M23 23L1 1"/></svg>
+          </div>
+          <div class="tile-empty-text">Waiting for peer to connect…</div>
+        </div>
+        <button id="tap-play-btn">▶ Tap to Start Playback</button>
+      </div>
+      <div class="tile-controls">
+        <div class="tc-group">
+          <button class="tc-btn" id="mute-remote-btn" title="Mute/Unmute Remote Audio">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══ RIGHT PANEL ══════════════════════════════════════ -->
+<aside class="right-panel">
+
+  <!-- ACTIVE DEVICES STATUS -->
+  <div class="rp-section">
+    <div class="rp-head">Active Devices</div>
+    <div class="rp-body">
+      <div class="device-status-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t3)"><circle cx="12" cy="12" r="3"/><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        <span id="active-cam-name" class="ds-none">No camera</span>
+      </div>
+      <div class="device-status-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t3)"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>
+        <span id="active-mic-name" class="ds-none">No microphone</span>
       </div>
     </div>
   </div>
 
-  <div id="incoming-call">
-    <div class="modal">
-      <div class="modal-title">Incoming Session Request</div>
-      <div id="caller-id" class="modal-subtitle">unknown</div>
-      <div class="modal-actions">
-        <button id="accept-call-btn" class="btn-green">Accept</button>
-        <button id="decline-call-btn" class="btn-red">Decline</button>
+  <!-- CAMERA SWITCH -->
+  <div class="rp-section">
+    <div class="rp-head">
+      Camera
+      <button class="rp-btn" style="width:auto;padding:3px 9px;font-size:10px;" id="refresh-devices-btn" title="Refresh device list">↻ Refresh</button>
+    </div>
+    <div class="rp-body">
+      <div class="rp-row">
+        <select id="camera-select" class="rp-select">
+          <option value="">Start camera to list devices</option>
+        </select>
       </div>
+      <button class="rp-btn accent" id="switch-camera-btn">Switch Camera</button>
     </div>
   </div>
 
-  <!-- hidden processing elements -->
-  <video id="raw-video" autoplay muted playsinline class="hidden-media"></video>
-  <canvas id="bg-canvas" class="hidden-media"></canvas>
+  <!-- MIC SWITCH -->
+  <div class="rp-section">
+    <div class="rp-head">Microphone</div>
+    <div class="rp-body">
+      <div class="rp-row">
+        <select id="mic-select" class="rp-select">
+          <option value="">Start camera to list devices</option>
+        </select>
+      </div>
+      <div class="rp-row">
+        <div class="rp-label">Audio Profile</div>
+        <select id="audio-profile-select" class="rp-select">
+          <option value="standard">Standard (noise cancel ON)</option>
+          <option value="voice">Voice Focus (max clarity)</option>
+          <option value="raw">Raw (no processing)</option>
+        </select>
+      </div>
+      <button class="rp-btn accent" id="switch-mic-btn">Switch Microphone</button>
+    </div>
+  </div>
 
-  <script src="app.js?v=6"></script>
+  <!-- SPEAKER -->
+  <div class="rp-section">
+    <div class="rp-head">Speaker Output</div>
+    <div class="rp-body">
+      <div class="rp-row">
+        <select id="speaker-select" class="rp-select">
+          <option value="">Default System Speaker</option>
+        </select>
+      </div>
+      <button class="rp-btn" id="apply-speaker-btn">Apply Speaker</button>
+    </div>
+  </div>
+
+  <!-- VIDEO EFFECTS -->
+  <div class="rp-section">
+    <div class="rp-head">Background Effect</div>
+    <div class="rp-body">
+      <div class="effect-grid">
+        <div class="effect-chip on" id="eff-none" onclick="setEffect('none')">
+          <div class="ei">🚫</div><div class="en">None</div>
+        </div>
+        <div class="effect-chip" id="eff-blur" onclick="setEffect('blur')">
+          <div class="ei">🌫️</div><div class="en">Blur</div>
+        </div>
+        <div class="effect-chip" id="eff-solid" onclick="setEffect('solid')">
+          <div class="ei">⬛</div><div class="en">Remove</div>
+        </div>
+        <div class="effect-chip" id="eff-image" onclick="setEffect('image')">
+          <div class="ei">🖼️</div><div class="en">Custom</div>
+        </div>
+      </div>
+      <button class="rp-btn" id="upload-bg-btn">Upload Background Image</button>
+      <input id="bg-upload-input" type="file" accept="image/*" class="hidden" />
+    </div>
+  </div>
+
+</aside>
+
+<!-- ══ INCOMING CALL MODAL ══════════════════════════════ -->
+<div id="incoming-overlay">
+  <div class="modal">
+    <div class="modal-ring">📞</div>
+    <div class="modal-title">Incoming Session</div>
+    <div class="modal-peer" id="caller-id">unknown</div>
+    <div class="modal-btns">
+      <button class="modal-btn accept" id="accept-btn">Accept</button>
+      <button class="modal-btn decline" id="decline-btn">Decline</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden processing -->
+<video id="raw-video" autoplay muted playsinline class="hidden"></video>
+<canvas id="bg-canvas" class="hidden"></canvas>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let peer = null;
+let localStream     = null;   // raw getUserMedia stream
+let outboundStream  = null;   // canvas + audio → what we send
+let currentCall     = null;
+let pendingCall     = null;
+let pendingRemote   = null;
+let audioProfile    = "standard";
+let videoEffect     = "none";
+let customBG        = null;
+let segmentation    = null;
+let pipelineActive  = false;
+let canvasStream    = null;
+let isRecording     = false;
+let timestamps      = [];
+
+// ════════════════════════════════════════════════════════════════
+//  ELEMENT REFS
+// ════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+
+const statusEl      = $("status");
+const statusDot     = $("status-dot");
+const connBadge     = $("conn-badge");
+const myIdEl        = $("my-id");
+const remoteInput   = $("remote-id-input");
+
+const localCanvas   = $("local-canvas");
+const localCtx      = localCanvas.getContext("2d");
+const rawVideo      = $("raw-video");
+const bgCanvas      = $("bg-canvas");
+const bgCtx         = bgCanvas.getContext("2d");
+const remoteVideo   = $("remote-video");
+
+const localEmpty    = $("local-empty");
+const remoteEmpty   = $("remote-empty");
+const localBadge    = $("local-badge");
+const remoteBadge   = $("remote-badge");
+
+const activeCamName = $("active-cam-name");
+const activeMicName = $("active-mic-name");
+
+const cameraSelect  = $("camera-select");
+const micSelect     = $("mic-select");
+const speakerSelect = $("speaker-select");
+const audioProfile$ = $("audio-profile-select");
+const tapPlayBtn    = $("tap-play-btn");
+const bgInput       = $("bg-upload-input");
+
+// ════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════
+window.addEventListener("load", () => {
+  bindEvents();
+  createPeer();
+  preloadJoinId();
+  initSegmentation();
+  setStatus("Platform ready — start camera or connect to a peer.");
+});
+
+function bindEvents() {
+  $("start-camera-btn").addEventListener("click", startCamera);
+  $("copy-id-btn").addEventListener("click", copyId);
+  $("share-link-btn").addEventListener("click", shareLink);
+  $("connect-btn").addEventListener("click", connectToPeer);
+  $("hangup-btn").addEventListener("click", hangUp);
+  $("accept-btn").addEventListener("click", acceptCall);
+  $("decline-btn").addEventListener("click", declineCall);
+  $("mute-mic-btn").addEventListener("click", toggleMic);
+  $("mute-remote-btn").addEventListener("click", toggleRemoteMute);
+  $("switch-camera-btn").addEventListener("click", switchCamera);
+  $("switch-mic-btn").addEventListener("click", switchMic);
+  $("apply-speaker-btn").addEventListener("click", applySpeaker);
+  $("refresh-devices-btn").addEventListener("click", refreshDevices);
+  $("upload-bg-btn").addEventListener("click", () => bgInput.click());
+  bgInput.addEventListener("change", handleBGUpload);
+  tapPlayBtn.addEventListener("click", forcePlay);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ════════════════════════════════════════════════════════════════
+function setStatus(msg) { statusEl.textContent = msg; }
+
+function setDot(state) {
+  statusDot.className = "status-dot" + (state ? " " + state : "");
+}
+
+function setConnBadge(state, label) {
+  connBadge.className = "conn-badge" + (state ? " " + state : "");
+  connBadge.innerHTML = `<div class="conn-dot"></div>${label}`;
+}
+
+function showLocal(show) {
+  localCanvas.style.display = show ? "block" : "none";
+  localEmpty.style.display  = show ? "none"  : "flex";
+  localBadge.textContent    = show ? "LIVE"  : "OFFLINE";
+  localBadge.className      = "tile-badge " + (show ? "live" : "offline");
+}
+
+function showRemote(show) {
+  remoteVideo.style.display = show ? "block" : "none";
+  remoteEmpty.style.display = show ? "none"  : "flex";
+  remoteBadge.textContent   = show ? "CONNECTED" : "NO SIGNAL";
+  remoteBadge.className     = "tile-badge " + (show ? "conn" : "wait");
+  if (show) { setConnBadge("live", "Live"); setDot("live"); }
+  else       { setConnBadge("", "Idle");   if (localStream) setDot("online"); }
+}
+
+function showTapPlay(show) {
+  tapPlayBtn.style.display = show ? "inline-block" : "none";
+}
+
+function showModal(show) {
+  $("incoming-overlay").style.display = show ? "flex" : "none";
+  if (show) setDot("ringing");
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PEER SETUP
+// ════════════════════════════════════════════════════════════════
+function createPeer() {
+  const id = "so-" + Math.random().toString(36).slice(2, 9);
+  peer = new Peer(id, { host: "0.peerjs.com", port: 443, secure: true });
+
+  peer.on("open", val => {
+    myIdEl.textContent = val;
+    myIdEl.classList.remove("placeholder");
+    setDot("online");
+    setStatus("Session ready — ID: " + val);
+  });
+
+  peer.on("call", incoming => {
+    pendingCall = incoming;
+    $("caller-id").textContent = incoming.peer;
+    showModal(true);
+    setStatus("Incoming session request from " + incoming.peer);
+  });
+
+  peer.on("error", err => {
+    console.error(err);
+    setStatus("Peer error: " + (err.type || "unknown"));
+    setDot("");
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SEGMENTATION
+// ════════════════════════════════════════════════════════════════
+function initSegmentation() {
+  segmentation = new SelfieSegmentation({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
+  });
+  segmentation.setOptions({ modelSelection: 1 });
+  segmentation.onResults(onSegResult);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CAMERA / MIC START
+// ════════════════════════════════════════════════════════════════
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: audioConstraints(audioProfile)
+    });
+    applyStream(stream);
+    await loadDevices();
+    setStatus("Camera started.");
+  } catch (err) {
+    console.error(err);
+    setStatus("Could not access camera: " + err.message);
+    alert("Camera/mic access denied or unavailable.");
+  }
+}
+
+// Core: wire a new raw stream into the pipeline
+async function applyStream(stream) {
+  stopLocalTracks();
+  localStream = stream;
+
+  rawVideo.srcObject = stream;
+  rawVideo.muted = true;
+  rawVideo.playsInline = true;
+  await rawVideo.play().catch(() => {});
+
+  await buildPipeline();
+  showLocal(true);
+  updateActiveBadges();
+  updateMicBtn();
+}
+
+async function buildPipeline() {
+  const vt = localStream.getVideoTracks()[0];
+  const s  = vt?.getSettings() || {};
+  const w  = s.width  || 1280;
+  const h  = s.height || 720;
+
+  localCanvas.width  = w;
+  localCanvas.height = h;
+  bgCanvas.width     = w;
+  bgCanvas.height    = h;
+
+  if (canvasStream) canvasStream.getTracks().forEach(t => t.stop());
+  canvasStream = localCanvas.captureStream(25);
+
+  rebuildOutbound();
+
+  if (!pipelineActive) {
+    pipelineActive = true;
+    frameLoop();
+  }
+}
+
+function rebuildOutbound() {
+  if (!canvasStream) return;
+  const vid   = canvasStream.getVideoTracks()[0];
+  const audio = localStream?.getAudioTracks()[0] || null;
+
+  outboundStream = new MediaStream();
+  if (vid)   outboundStream.addTrack(vid);
+  if (audio) outboundStream.addTrack(audio);
+
+  replaceSenders();
+}
+
+async function replaceSenders() {
+  if (!currentCall?.peerConnection || !outboundStream) return;
+  const senders   = currentCall.peerConnection.getSenders();
+  const newVid    = outboundStream.getVideoTracks()[0];
+  const newAud    = outboundStream.getAudioTracks()[0];
+  const vidSender = senders.find(s => s.track?.kind === "video");
+  const audSender = senders.find(s => s.track?.kind === "audio");
+  try {
+    if (vidSender && newVid) await vidSender.replaceTrack(newVid);
+    if (audSender && newAud) await audSender.replaceTrack(newAud);
+    setStatus("Device switch applied to live session.");
+  } catch (e) { console.error("replaceSenders:", e); }
+}
+
+async function frameLoop() {
+  if (!pipelineActive) return;
+  if (rawVideo.readyState >= 2 && segmentation) {
+    try { await segmentation.send({ image: rawVideo }); } catch (e) {}
+  }
+  requestAnimationFrame(frameLoop);
+}
+
+function onSegResult(res) {
+  const w = localCanvas.width, h = localCanvas.height;
+  localCtx.save();
+  localCtx.clearRect(0, 0, w, h);
+
+  if (videoEffect === "none") {
+    localCtx.drawImage(res.image, 0, 0, w, h);
+  } else if (videoEffect === "blur") {
+    localCtx.drawImage(res.segmentationMask, 0, 0, w, h);
+    localCtx.globalCompositeOperation = "source-out";
+    localCtx.filter = "blur(15px)";
+    localCtx.drawImage(res.image, 0, 0, w, h);
+    localCtx.globalCompositeOperation = "destination-atop";
+    localCtx.filter = "none";
+    localCtx.drawImage(res.image, 0, 0, w, h);
+  } else if (videoEffect === "solid") {
+    localCtx.fillStyle = "#0a0e1a";
+    localCtx.fillRect(0, 0, w, h);
+    localCtx.globalCompositeOperation = "destination-out";
+    localCtx.drawImage(res.segmentationMask, 0, 0, w, h);
+    localCtx.globalCompositeOperation = "destination-over";
+    localCtx.drawImage(res.image, 0, 0, w, h);
+  } else if (videoEffect === "image") {
+    if (customBG) localCtx.drawImage(customBG, 0, 0, w, h);
+    else { localCtx.fillStyle = "#1e3a8a"; localCtx.fillRect(0, 0, w, h); }
+    localCtx.globalCompositeOperation = "destination-out";
+    localCtx.drawImage(res.segmentationMask, 0, 0, w, h);
+    localCtx.globalCompositeOperation = "destination-over";
+    localCtx.drawImage(res.image, 0, 0, w, h);
+  } else {
+    localCtx.drawImage(res.image, 0, 0, w, h);
+  }
+  localCtx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DEVICE SWITCHING  ← main focus area
+// ════════════════════════════════════════════════════════════════
+
+// Load all available devices into selects
+async function loadDevices() {
+  // Must be called after getUserMedia to get labeled devices
+  let devices;
+  try { devices = await navigator.mediaDevices.enumerateDevices(); }
+  catch (e) { setStatus("Could not enumerate devices."); return; }
+
+  const cams     = devices.filter(d => d.kind === "videoinput");
+  const mics     = devices.filter(d => d.kind === "audioinput");
+  const speakers = devices.filter(d => d.kind === "audiooutput");
+
+  fillSelect(cameraSelect,  cams,     "Camera");
+  fillSelect(micSelect,     mics,     "Microphone");
+  fillSelect(speakerSelect, speakers, "Speaker", true);
+
+  // Pre-select currently active devices
+  if (localStream) {
+    const vs = localStream.getVideoTracks()[0]?.getSettings();
+    const as = localStream.getAudioTracks()[0]?.getSettings();
+    if (vs?.deviceId) cameraSelect.value = vs.deviceId;
+    if (as?.deviceId) micSelect.value    = as.deviceId;
+  }
+}
+
+function fillSelect(sel, devices, label, addDefault = false) {
+  sel.innerHTML = "";
+  if (addDefault) {
+    const o = document.createElement("option");
+    o.value = ""; o.textContent = "Default System " + label;
+    sel.appendChild(o);
+  }
+  if (!devices.length) {
+    const o = document.createElement("option");
+    o.value = ""; o.textContent = "No " + label + " found";
+    sel.appendChild(o);
+    return;
+  }
+  devices.forEach((d, i) => {
+    const o = document.createElement("option");
+    o.value = d.deviceId;
+    o.textContent = d.label || `${label} ${i + 1}`;
+    sel.appendChild(o);
+  });
+}
+
+async function refreshDevices() {
+  if (!localStream) { setStatus("Start camera first to detect devices."); return; }
+  await loadDevices();
+  setStatus("Device list refreshed.");
+}
+
+// Switch camera only — keep existing mic track
+async function switchCamera() {
+  if (!localStream) { setStatus("Start camera before switching."); return; }
+  const camId = cameraSelect.value;
+  if (!camId) { setStatus("Select a camera first."); return; }
+
+  // Check if it's already the active camera
+  const currentCamId = localStream.getVideoTracks()[0]?.getSettings()?.deviceId;
+  if (camId === currentCamId) { setStatus("That camera is already active."); return; }
+
+  setStatus("Switching camera…");
+  try {
+    // Get new video track only
+    const newVidStream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: camId } },
+      audio: false
+    });
+
+    // Stop old video track
+    localStream.getVideoTracks().forEach(t => t.stop());
+
+    // Replace in localStream
+    const newVidTrack = newVidStream.getVideoTracks()[0];
+    localStream.removeTrack(localStream.getVideoTracks()[0]);  // remove stale
+    localStream.addTrack(newVidTrack);
+
+    // Re-feed raw video
+    rawVideo.srcObject = null;
+    rawVideo.srcObject = localStream;
+    await rawVideo.play().catch(() => {});
+
+    // Rebuild canvas dimensions for new camera resolution
+    await buildPipeline();
+    showLocal(true);
+    updateActiveBadges();
+    setStatus("Camera switched: " + (newVidTrack.label || camId));
+  } catch (err) {
+    console.error(err);
+    setStatus("Camera switch failed: " + err.message);
+  }
+}
+
+// Switch mic only — keep existing video track
+async function switchMic() {
+  if (!localStream) { setStatus("Start camera before switching mic."); return; }
+  const micId = micSelect.value;
+  if (!micId) { setStatus("Select a microphone first."); return; }
+
+  const currentMicId = localStream.getAudioTracks()[0]?.getSettings()?.deviceId;
+  if (micId === currentMicId) { setStatus("That microphone is already active."); return; }
+
+  setStatus("Switching microphone…");
+  try {
+    const profile = audioProfile$.value;
+    const newAudStream = await navigator.mediaDevices.getUserMedia({
+      video: false,
+      audio: audioConstraints(profile, micId)
+    });
+
+    // Stop old audio track
+    localStream.getAudioTracks().forEach(t => t.stop());
+
+    const newAudTrack = newAudStream.getAudioTracks()[0];
+
+    // Remove old audio from localStream, add new
+    localStream.getAudioTracks().forEach(t => localStream.removeTrack(t));
+    localStream.addTrack(newAudTrack);
+
+    // Rebuild outbound with new audio
+    rebuildOutbound();
+    updateActiveBadges();
+    updateMicBtn();
+    setStatus("Microphone switched: " + (newAudTrack.label || micId));
+  } catch (err) {
+    console.error(err);
+    setStatus("Mic switch failed: " + err.message);
+  }
+}
+
+async function applySpeaker() {
+  const id = speakerSelect.value;
+  if (typeof remoteVideo.setSinkId !== "function") {
+    setStatus("Speaker switching not supported in this browser (Chrome recommended).");
+    return;
+  }
+  try {
+    await remoteVideo.setSinkId(id || "");
+    setStatus("Speaker output updated.");
+  } catch (err) { setStatus("Speaker switch failed: " + err.message); }
+}
+
+function updateActiveBadges() {
+  if (!localStream) {
+    activeCamName.textContent = "No camera";
+    activeCamName.className   = "ds-none";
+    activeMicName.textContent = "No microphone";
+    activeMicName.className   = "ds-none";
+    return;
+  }
+  const vt = localStream.getVideoTracks()[0];
+  const at = localStream.getAudioTracks()[0];
+  activeCamName.textContent = vt ? (vt.label || "Camera active") : "No camera";
+  activeCamName.className   = vt ? "ds-name" : "ds-none";
+  activeMicName.textContent = at ? (at.label || "Microphone active") : "No microphone";
+  activeMicName.className   = at ? "ds-name" : "ds-none";
+}
+
+// ════════════════════════════════════════════════════════════════
+//  AUDIO CONSTRAINTS
+// ════════════════════════════════════════════════════════════════
+function audioConstraints(profile, deviceId = null) {
+  const base = deviceId ? { deviceId: { exact: deviceId } } : {};
+  if (profile === "voice") return { ...base, echoCancellation: true,  noiseSuppression: true,  autoGainControl: true  };
+  if (profile === "raw")   return { ...base, echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+  return                          { ...base, echoCancellation: true,  noiseSuppression: true,  autoGainControl: true  };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  EFFECTS
+// ════════════════════════════════════════════════════════════════
+function setEffect(mode) {
+  if (mode === "image" && !customBG) {
+    bgInput.click();
+    return;
+  }
+  videoEffect = mode;
+  ["none","blur","solid","image"].forEach(k => {
+    $("eff-" + k).classList.toggle("on", k === mode);
+  });
+  setStatus("Effect: " + mode);
+}
+
+function handleBGUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    customBG = img;
+    setEffect("image");
+    setStatus("Custom background loaded.");
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CALL FLOW
+// ════════════════════════════════════════════════════════════════
+function connectToPeer() {
+  const id = remoteInput.value.trim();
+  if (!id)   { alert("Paste a remote Session ID first."); return; }
+  if (!peer) { alert("Peer not ready yet."); return; }
+  if (currentCall) { currentCall.close(); currentCall = null; }
+  setStatus("Connecting to " + id + "…");
+  setDot("ringing");
+  try {
+    currentCall = peer.call(id, outboundStream || undefined);
+    wireCall(currentCall);
+  } catch (e) { console.error(e); setStatus("Connection failed."); setDot("online"); }
+}
+
+function acceptCall() {
+  if (!pendingCall) return;
+  if (currentCall) { currentCall.close(); currentCall = null; }
+  currentCall = pendingCall;
+  pendingCall = null;
+  showModal(false);
+  currentCall.answer(outboundStream || undefined);
+  wireCall(currentCall);
+  setStatus("Session accepted.");
+}
+
+function declineCall() {
+  if (pendingCall) { pendingCall.close(); pendingCall = null; }
+  showModal(false);
+  setStatus("Session request declined.");
+  setDot("online");
+}
+
+function wireCall(call) {
+  call.on("stream", remote => {
+    pendingRemote = remote;
+    attachRemote(remote);
+  });
+  call.on("close", () => {
+    clearRemote();
+    showModal(false);
+    pendingCall = null;
+    setStatus("Session ended.");
+    if (localStream) setDot("online"); else setDot("");
+  });
+  call.on("error", e => { console.error(e); setStatus("Call error."); });
+}
+
+function attachRemote(stream) {
+  remoteVideo.srcObject  = stream;
+  remoteVideo.playsInline = true;
+  remoteVideo.muted      = false;
+  showRemote(true);
+  updateRemoteMuteBtn();
+  const p = remoteVideo.play();
+  if (p?.then) {
+    p.then(() => { showTapPlay(false); setStatus("Remote feed connected."); })
+     .catch(() => { showTapPlay(true); setStatus("Tap button to start remote playback."); });
+  } else { setStatus("Remote feed connected."); }
+}
+
+function forcePlay() {
+  if (pendingRemote && !remoteVideo.srcObject) remoteVideo.srcObject = pendingRemote;
+  remoteVideo.play()
+    .then(() => { showTapPlay(false); setStatus("Remote feed connected."); })
+    .catch(e  => { console.error(e); setStatus("Tap again to start playback."); });
+}
+
+function clearRemote() {
+  remoteVideo.srcObject = null;
+  pendingRemote = null;
+  showRemote(false);
+  showTapPlay(false);
+  updateRemoteMuteBtn();
+}
+
+function hangUp() {
+  if (pendingCall)  { pendingCall.close();  pendingCall  = null; }
+  if (currentCall)  { currentCall.close();  currentCall  = null; }
+  showModal(false);
+  clearRemote();
+  if (localStream) setDot("online"); else setDot("");
+  setStatus("Session ended.");
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MIC / REMOTE MUTE
+// ════════════════════════════════════════════════════════════════
+function toggleMic() {
+  if (!localStream) { setStatus("Start camera first."); return; }
+  const t = localStream.getAudioTracks()[0];
+  if (!t) { setStatus("No microphone track."); return; }
+  t.enabled = !t.enabled;
+  updateMicBtn();
+  setStatus(t.enabled ? "Microphone unmuted." : "Microphone muted.");
+}
+
+function updateMicBtn() {
+  const t   = localStream?.getAudioTracks()[0];
+  const muted = t ? !t.enabled : false;
+  $("mute-mic-btn").classList.toggle("muted", muted);
+}
+
+function toggleRemoteMute() {
+  remoteVideo.muted = !remoteVideo.muted;
+  updateRemoteMuteBtn();
+  setStatus(remoteVideo.muted ? "Remote audio muted." : "Remote audio unmuted.");
+}
+
+function updateRemoteMuteBtn() {
+  $("mute-remote-btn").classList.toggle("muted", remoteVideo.muted);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ID / LINK UTILITIES
+// ════════════════════════════════════════════════════════════════
+async function copyId() {
+  const id = myIdEl.textContent;
+  if (!id || id === "Connecting…") return;
+  try { await navigator.clipboard.writeText(id); setStatus("Session ID copied."); }
+  catch { prompt("Copy your Session ID:", id); }
+}
+
+function shareLink() {
+  const id = myIdEl.textContent;
+  if (!id || id === "Connecting…") { setStatus("Session ID not ready yet."); return; }
+  const url = window.location.origin + window.location.pathname + "?join=" + id;
+  try { navigator.clipboard.writeText(url); setStatus("Join link copied to clipboard."); }
+  catch { prompt("Copy this link:", url); }
+}
+
+function preloadJoinId() {
+  const params = new URLSearchParams(window.location.search);
+  const join   = params.get("join");
+  if (join) remoteInput.value = join;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  COACHING TOOLS (stubs — Milestone C)
+// ════════════════════════════════════════════════════════════════
+function toggleRecord() {
+  isRecording = !isRecording;
+  const tile = $("tile-record");
+  tile.classList.toggle("active", isRecording);
+  tile.querySelector(".action-tile-label").textContent = isRecording ? "Stop" : "Record";
+  setStatus(isRecording ? "Recording started. (MediaRecorder integration in Milestone C)" : "Recording stopped.");
+}
+
+function markTimestamp() {
+  const t = new Date().toLocaleTimeString();
+  timestamps.push(t);
+  setStatus(`Timestamp #${timestamps.length} marked at ${t}`);
+}
+
+function stopLocalTracks() {
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+}
+</script>
 </body>
 </html>
